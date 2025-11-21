@@ -23,37 +23,42 @@ export function parseTradeReport(fileContent: string): Trade[] {
   let startIndex = -1;
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].includes('Closed Transactions:')) {
-      startIndex = i + 1;
+      startIndex = i + 2; // Skip "Closed Transactions:" and header line
       break;
     }
   }
   
   if (startIndex === -1) return trades;
   
-  // Skip header line
-  startIndex++;
-  
   // Parse each trade line
   for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (!line || line.includes('Total:') || line.includes('Closed P/L:')) break;
+    if (!line || line.includes('Total:') || line.includes('Closed P/L:') || line.includes('Open Trades:')) break;
     
-    // Split by multiple spaces or tabs
-    const parts = line.split(/\s{2,}|\t/).filter(Boolean);
+    // Split by tab
+    const parts = line.split('\t').filter(Boolean);
     if (parts.length < 10) continue;
+    
+    // Skip balance/deposit lines and cancelled orders
+    const type = parts[2].toLowerCase();
+    if (type === 'balance' || (parts.length > 10 && parts[parts.length - 1] === 'cancelled')) {
+      continue;
+    }
     
     try {
       const ticket = parts[0];
       const openTime = parseDateTime(parts[1]);
-      const type = parts[2].toLowerCase().includes('buy') ? 'buy' : 'sell';
+      const tradingType = type.includes('buy') ? 'buy' : 'sell';
       const size = parseFloat(parts[3]);
-      const symbol = parts[4];
+      const symbol = parts[4].toLowerCase();
       const openPrice = parseFloat(parts[5]);
-      const closeTime = parseDateTime(parts[6]);
-      const closePrice = parseFloat(parts[7]);
-      const commission = parseFloat(parts[8]) || 0;
-      const swap = parseFloat(parts[9]) || 0;
-      const profit = parseFloat(parts[10]) || 0;
+      // Parts 6 and 7 are S/L and T/P - skip them
+      const closeTime = parseDateTime(parts[8]);
+      const closePrice = parseFloat(parts[9]);
+      const commission = parseFloat(parts[10]) || 0;
+      // Part 11 is Taxes - skip it
+      const swap = parseFloat(parts[12]) || 0;
+      const profit = parseFloat(parts[13]) || 0;
       
       const netProfit = profit + commission + swap;
       const duration = (closeTime.getTime() - openTime.getTime()) / (1000 * 60); // in minutes
@@ -62,7 +67,7 @@ export function parseTradeReport(fileContent: string): Trade[] {
       trades.push({
         ticket,
         openTime,
-        type,
+        type: tradingType,
         size,
         symbol,
         openPrice,
