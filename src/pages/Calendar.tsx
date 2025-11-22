@@ -1,6 +1,10 @@
 import { Sidebar } from "@/components/Sidebar";
+import { TradingCalendar } from "@/components/TradingCalendar";
+import { useTrades } from "@/hooks/useTrades";
 
 const Calendar = () => {
+  const { trades, isLoading } = useTrades();
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <Sidebar />
@@ -14,9 +18,15 @@ const Calendar = () => {
             </p>
           </div>
 
-          <div className="bg-card border border-border rounded-lg p-8 text-center">
-            <p className="text-muted-foreground">Calendar view coming soon...</p>
-          </div>
+          {isLoading ? (
+            <div className="text-center text-muted-foreground">Loading...</div>
+          ) : trades.length === 0 ? (
+            <div className="bg-card border border-border rounded-lg p-8 text-center">
+              <p className="text-muted-foreground">No trades yet. Import your first report from the Dashboard.</p>
+            </div>
+          ) : (
+            <TradingCalendar trades={trades} />
+          )}
         </div>
       </main>
     </div>

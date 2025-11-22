@@ -1,6 +1,10 @@
 import { Sidebar } from "@/components/Sidebar";
+import { TradesTable } from "@/components/TradesTable";
+import { useTrades } from "@/hooks/useTrades";
 
 const Journal = () => {
+  const { trades, isLoading } = useTrades();
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <Sidebar />
@@ -10,13 +14,19 @@ const Journal = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Trading Journal</h1>
             <p className="text-muted-foreground">
-              Detailed trade-by-trade analysis and notes
+              Complete history of all {trades.length} trades
             </p>
           </div>
 
-          <div className="bg-card border border-border rounded-lg p-8 text-center">
-            <p className="text-muted-foreground">Journal view coming soon...</p>
-          </div>
+          {isLoading ? (
+            <div className="text-center text-muted-foreground">Loading...</div>
+          ) : trades.length === 0 ? (
+            <div className="bg-card border border-border rounded-lg p-8 text-center">
+              <p className="text-muted-foreground">No trades yet. Import your first report from the Dashboard.</p>
+            </div>
+          ) : (
+            <TradesTable trades={trades} />
+          )}
         </div>
       </main>
     </div>

@@ -4,18 +4,46 @@ import { FileUpload } from "@/components/FileUpload";
 import { MetricCard } from "@/components/MetricCard";
 import { EquityCurve } from "@/components/EquityCurve";
 import { TradesTable } from "@/components/TradesTable";
-import { parseTradeReport, calculateMetrics, Trade } from "@/lib/parseTradeReport";
-import { TrendingUp, Target, DollarSign, Activity, Award } from "lucide-react";
+import { parseTradeReport, calculateMetrics } from "@/lib/parseTradeReport";
+import { useTrades } from "@/hooks/useTrades";
+import { TrendingUp, Target, DollarSign, Activity, Award, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Index = () => {
-  const [trades, setTrades] = useState<Trade[]>([]);
+  const { trades, saveTrades, deleteAllTrades, isLoading, isSaving, isDeleting } = useTrades();
+  const [showUpload, setShowUpload] = useState(false);
 
   const handleFileUpload = (content: string) => {
     const parsedTrades = parseTradeReport(content);
-    setTrades(parsedTrades);
+    if (parsedTrades.length > 0) {
+      saveTrades(parsedTrades);
+      setShowUpload(false);
+    }
   };
 
   const metrics = calculateMetrics(trades);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen w-full bg-background">
+        <Sidebar />
+        <main className="flex-1 overflow-auto flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -23,15 +51,59 @@ const Index = () => {
       
       <main className="flex-1 overflow-auto">
         <div className="p-8 max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Trading Dashboard</h1>
-            <p className="text-muted-foreground">
-              Upload your MT4/FTMO report to analyze your trading performance
-            </p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Trading Dashboard</h1>
+              <p className="text-muted-foreground">
+                {trades.length > 0 ? `Analyzing ${trades.length} trades` : 'Upload your MT4/FTMO report to start'}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {trades.length > 0 && (
+                <>
+                  <Button onClick={() => setShowUpload(true)} variant="outline" disabled={isSaving}>
+                    Import New Report
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" disabled={isDeleting}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete All
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete all {trades.length} trades from the database. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteAllTrades()}>
+                          Delete All Trades
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+            </div>
           </div>
 
-          {trades.length === 0 ? (
-            <FileUpload onFileUpload={handleFileUpload} />
+          {trades.length === 0 || showUpload ? (
+            <div>
+              <FileUpload onFileUpload={handleFileUpload} />
+              {showUpload && trades.length > 0 && (
+                <Button 
+                  onClick={() => setShowUpload(false)} 
+                  variant="ghost" 
+                  className="mt-4 w-full"
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
           ) : (
             <div className="space-y-6 animate-fade-in">
               {/* KPI Cards */}
