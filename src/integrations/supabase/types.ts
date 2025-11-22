@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      trades: {
+        Row: {
+          close_price: number
+          close_time: string
+          commission: number | null
+          created_at: string | null
+          duration: number
+          id: string
+          is_win: boolean
+          net_profit: number
+          open_price: number
+          open_time: string
+          profit: number
+          size: number
+          swap: number | null
+          symbol: string
+          ticket: string
+          type: string
+        }
+        Insert: {
+          close_price: number
+          close_time: string
+          commission?: number | null
+          created_at?: string | null
+          duration: number
+          id?: string
+          is_win: boolean
+          net_profit: number
+          open_price: number
+          open_time: string
+          profit: number
+          size: number
+          swap?: number | null
+          symbol: string
+          ticket: string
+          type: string
+        }
+        Update: {
+          close_price?: number
+          close_time?: string
+          commission?: number | null
+          created_at?: string | null
+          duration?: number
+          id?: string
+          is_win?: boolean
+          net_profit?: number
+          open_price?: number
+          open_time?: string
+          profit?: number
+          size?: number
+          swap?: number | null
+          symbol?: string
+          ticket?: string
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
