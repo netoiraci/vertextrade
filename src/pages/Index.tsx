@@ -107,42 +107,55 @@ const Index = () => {
           ) : (
             <div className="space-y-6 animate-fade-in">
               {/* KPI Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
                 <MetricCard
-                  title="Total Trades"
-                  value={metrics.totalTrades}
-                  icon={Activity}
+                  title="Saldo Inicial"
+                  value={`$${(10000).toFixed(2)}`}
+                  icon={DollarSign}
                   delay={0}
                 />
                 <MetricCard
-                  title="Win Rate"
-                  value={`${metrics.winRate.toFixed(1)}%`}
-                  subtitle={`${metrics.totalWins}W / ${metrics.totalLosses}L`}
-                  icon={Target}
-                  trend={metrics.winRate >= 50 ? "up" : "down"}
+                  title="Saldo Atual"
+                  value={`$${(10000 + metrics.totalPnL).toFixed(2)}`}
+                  icon={DollarSign}
+                  trend={metrics.totalPnL >= 0 ? "up" : "down"}
+                  delay={0.05}
+                />
+                <MetricCard
+                  title="Total de Operações"
+                  value={metrics.totalTrades}
+                  icon={Activity}
                   delay={0.1}
                 />
                 <MetricCard
-                  title="Profit Factor"
+                  title="Taxa de Acerto"
+                  value={`${metrics.winRate.toFixed(1)}%`}
+                  subtitle={`${metrics.totalWins}G / ${metrics.totalLosses}P`}
+                  icon={Target}
+                  trend={metrics.winRate >= 50 ? "up" : "down"}
+                  delay={0.15}
+                />
+                <MetricCard
+                  title="Fator de Lucro"
                   value={metrics.profitFactor === Infinity ? "∞" : metrics.profitFactor.toFixed(2)}
                   icon={Award}
                   trend={metrics.profitFactor >= 1.5 ? "up" : "down"}
                   delay={0.2}
                 />
                 <MetricCard
-                  title="Total P&L"
+                  title="P&L Total"
                   value={`$${metrics.totalPnL.toFixed(2)}`}
                   icon={DollarSign}
                   trend={metrics.totalPnL >= 0 ? "up" : "down"}
-                  delay={0.3}
+                  delay={0.25}
                 />
                 <MetricCard
-                  title="Expectancy"
+                  title="Expectativa"
                   value={`$${metrics.expectancy.toFixed(2)}`}
-                  subtitle="per trade"
+                  subtitle="por operação"
                   icon={TrendingUp}
                   trend={metrics.expectancy >= 0 ? "up" : "down"}
-                  delay={0.4}
+                  delay={0.3}
                 />
               </div>
 
