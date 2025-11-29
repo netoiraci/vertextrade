@@ -3,17 +3,23 @@ import { Trade } from "@/lib/parseTradeReport";
 
 interface EquityCurveProps {
   trades: Trade[];
+  initialBalance?: number;
 }
 
-export function EquityCurve({ trades }: EquityCurveProps) {
-  const data = trades.reduce((acc, trade, index) => {
-    const previousBalance = index === 0 ? 0 : acc[index - 1].balance;
+export function EquityCurve({ trades, initialBalance = 10000 }: EquityCurveProps) {
+  // Sort trades by close time to ensure correct order
+  const sortedTrades = [...trades].sort(
+    (a, b) => new Date(a.closeTime).getTime() - new Date(b.closeTime).getTime()
+  );
+
+  const data = sortedTrades.reduce((acc, trade, index) => {
+    const previousBalance = index === 0 ? initialBalance : acc[index - 1].balance;
     const newBalance = previousBalance + trade.netProfit;
     
     acc.push({
       index: index + 1,
       balance: newBalance,
-      date: trade.closeTime.toLocaleDateString(),
+      date: new Date(trade.closeTime).toLocaleDateString(),
     });
     
     return acc;
@@ -21,7 +27,7 @@ export function EquityCurve({ trades }: EquityCurveProps) {
 
   return (
     <div className="bg-card border border-border rounded-lg p-6">
-      <h3 className="text-lg font-semibold mb-4">Equity Curve</h3>
+      <h3 className="text-lg font-semibold mb-4">Curva de Capital</h3>
       <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={data}>
           <defs>
