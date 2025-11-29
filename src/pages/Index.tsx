@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { FileUpload } from "@/components/FileUpload";
 import { MetricCard } from "@/components/MetricCard";
 import { EquityCurve } from "@/components/EquityCurve";
+import { DrawdownChart } from "@/components/DrawdownChart";
 import { TradesTable } from "@/components/TradesTable";
 import { parseTradeReport, calculateMetrics } from "@/lib/parseTradeReport";
 import { useTrades } from "@/hooks/useTrades";
@@ -20,6 +21,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const INITIAL_BALANCE = 10000;
+
 const Index = () => {
   const { trades, saveTrades, deleteAllTrades, isLoading, isSaving, isDeleting } = useTrades();
   const [showUpload, setShowUpload] = useState(false);
@@ -33,13 +36,18 @@ const Index = () => {
   };
 
   const metrics = calculateMetrics(trades);
+  
+  // Calculate current balance based on sorted trades
+  const currentBalance = trades.length > 0 
+    ? INITIAL_BALANCE + metrics.totalPnL 
+    : INITIAL_BALANCE;
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar />
         <main className="flex-1 overflow-auto flex items-center justify-center">
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">Carregando...</p>
         </main>
       </div>
     );
@@ -53,35 +61,35 @@ const Index = () => {
         <div className="p-8 max-w-7xl mx-auto">
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Trading Dashboard</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Painel de Trading</h1>
               <p className="text-muted-foreground">
-                {trades.length > 0 ? `Analyzing ${trades.length} trades` : 'Upload your MT4/FTMO report to start'}
+                {trades.length > 0 ? `Analisando ${trades.length} operações` : 'Importe seu relatório MT4/FTMO para começar'}
               </p>
             </div>
             <div className="flex gap-2">
               {trades.length > 0 && (
                 <>
                   <Button onClick={() => setShowUpload(true)} variant="outline" disabled={isSaving}>
-                    Import New Report
+                    Importar Novo Relatório
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" disabled={isDeleting}>
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete All
+                        Excluir Tudo
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will permanently delete all {trades.length} trades from the database. This action cannot be undone.
+                          Isso irá excluir permanentemente todas as {trades.length} operações do banco de dados. Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={() => deleteAllTrades()}>
-                          Delete All Trades
+                          Excluir Todas as Operações
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -100,7 +108,7 @@ const Index = () => {
                   variant="ghost" 
                   className="mt-4 w-full"
                 >
-                  Cancel
+                  Cancelar
                 </Button>
               )}
             </div>
@@ -110,13 +118,13 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
                 <MetricCard
                   title="Saldo Inicial"
-                  value={`$${(10000).toFixed(2)}`}
+                  value={`$${INITIAL_BALANCE.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                   icon={DollarSign}
                   delay={0}
                 />
                 <MetricCard
                   title="Saldo Atual"
-                  value={`$${(10000 + metrics.totalPnL).toFixed(2)}`}
+                  value={`$${currentBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                   icon={DollarSign}
                   trend={metrics.totalPnL >= 0 ? "up" : "down"}
                   delay={0.05}
@@ -144,7 +152,7 @@ const Index = () => {
                 />
                 <MetricCard
                   title="P&L Total"
-                  value={`$${metrics.totalPnL.toFixed(2)}`}
+                  value={`$${metrics.totalPnL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                   icon={DollarSign}
                   trend={metrics.totalPnL >= 0 ? "up" : "down"}
                   delay={0.25}
@@ -160,10 +168,12 @@ const Index = () => {
               </div>
 
               {/* Charts */}
-              <div className="grid grid-cols-1 gap-6">
-                <EquityCurve trades={trades} />
-                <TradesTable trades={trades} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <EquityCurve trades={trades} initialBalance={INITIAL_BALANCE} />
+                <DrawdownChart trades={trades} initialBalance={INITIAL_BALANCE} />
               </div>
+              
+              <TradesTable trades={trades} />
             </div>
           )}
         </div>
