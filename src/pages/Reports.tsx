@@ -1,10 +1,14 @@
 import { Sidebar } from "@/components/Sidebar";
 import { PerformanceCharts } from "@/components/PerformanceCharts";
 import { EquityCurve } from "@/components/EquityCurve";
+import { DrawdownChart } from "@/components/DrawdownChart";
+import { RiskMetrics } from "@/components/RiskMetrics";
 import { useTrades } from "@/hooks/useTrades";
 import { calculateMetrics } from "@/lib/parseTradeReport";
 import { TrendingUp, TrendingDown, Calendar, Clock, Target, Award, DollarSign, BarChart3 } from "lucide-react";
 import { useMemo } from "react";
+
+const INITIAL_BALANCE = 10000;
 
 const Reports = () => {
   const { trades, isLoading } = useTrades();
@@ -65,6 +69,9 @@ const Reports = () => {
             </div>
           ) : (
             <div className="space-y-6">
+              {/* Métricas de Risco Avançadas */}
+              <RiskMetrics trades={trades} initialBalance={INITIAL_BALANCE} />
+
               {/* Resumo Geral */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-card border border-border rounded-lg p-6">
@@ -110,8 +117,11 @@ const Reports = () => {
                 </div>
               </div>
 
-              {/* Curva de Equity */}
-              <EquityCurve trades={trades} />
+              {/* Gráficos de Equity e Drawdown */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <EquityCurve trades={trades} initialBalance={INITIAL_BALANCE} />
+                <DrawdownChart trades={trades} initialBalance={INITIAL_BALANCE} />
+              </div>
 
               {/* Performance Charts */}
               <PerformanceCharts trades={trades} />
