@@ -1,13 +1,9 @@
 import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { FileUpload } from "@/components/FileUpload";
-import { MetricCard } from "@/components/MetricCard";
-import { EquityCurve } from "@/components/EquityCurve";
-import { DrawdownChart } from "@/components/DrawdownChart";
-import { TradesTable } from "@/components/TradesTable";
 import { parseTradeReport, calculateMetrics } from "@/lib/parseTradeReport";
 import { useTrades } from "@/hooks/useTrades";
-import { TrendingUp, Target, DollarSign, Activity, Award, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -20,6 +16,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { DonutChart } from "@/components/dashboard/DonutChart";
+import { ProgressBar } from "@/components/dashboard/ProgressBar";
+import { MiniAreaChart } from "@/components/dashboard/MiniAreaChart";
+import { BiggestTradesBar } from "@/components/dashboard/BiggestTradesBar";
+import { CumulativePnLChart } from "@/components/dashboard/CumulativePnLChart";
+import { MonthlyPnLChart } from "@/components/dashboard/MonthlyPnLChart";
+import { DailyPnLChart } from "@/components/dashboard/DailyPnLChart";
 
 const INITIAL_BALANCE = 10000;
 
@@ -37,10 +41,40 @@ const Index = () => {
 
   const metrics = calculateMetrics(trades);
   
-  // Calculate current balance based on sorted trades
   const currentBalance = trades.length > 0 
     ? INITIAL_BALANCE + metrics.totalPnL 
     : INITIAL_BALANCE;
+
+  // Calculate drawdown data
+  const drawdownData = trades.length > 0 ? (() => {
+    const sorted = [...trades].sort((a, b) => a.closeTime.getTime() - b.closeTime.getTime());
+    let cumulative = 0;
+    let peak = 0;
+    const data: number[] = [];
+    sorted.forEach(t => {
+      cumulative += t.netProfit;
+      if (cumulative > peak) peak = cumulative;
+      data.push(cumulative - peak);
+    });
+    return data;
+  })() : [];
+
+  const maxDrawdown = drawdownData.length > 0 ? Math.min(...drawdownData) : 0;
+
+  // Find biggest win and loss
+  const biggestWin = trades.length > 0 ? Math.max(...trades.map(t => t.netProfit)) : 0;
+  const biggestLoss = trades.length > 0 ? Math.min(...trades.map(t => t.netProfit)) : 0;
+
+  // Calculate avg win/loss
+  const winTrades = trades.filter(t => t.isWin);
+  const lossTrades = trades.filter(t => !t.isWin);
+  const avgWin = winTrades.length > 0 ? winTrades.reduce((sum, t) => sum + t.netProfit, 0) / winTrades.length : 0;
+  const avgLoss = lossTrades.length > 0 ? Math.abs(lossTrades.reduce((sum, t) => sum + t.netProfit, 0) / lossTrades.length) : 0;
+  const avgWinLossRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
+
+  // Gross profit and fees
+  const grossProfit = trades.reduce((sum, t) => sum + t.profit, 0);
+  const totalFees = trades.reduce((sum, t) => sum + (t.commission || 0) + (t.swap || 0), 0);
 
   if (isLoading) {
     return (
@@ -58,38 +92,37 @@ const Index = () => {
       <Sidebar />
       
       <main className="flex-1 overflow-auto">
-        <div className="p-8 max-w-7xl mx-auto">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Painel de Trading</h1>
-              <p className="text-muted-foreground">
-                {trades.length > 0 ? `Analisando ${trades.length} operações` : 'Importe seu relatório MT4/FTMO para começar'}
-              </p>
+        <div className="p-6">
+          {/* Header */}
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-primary font-bold">|</span>
+              <h1 className="text-xl font-semibold text-foreground">Overview Dashboard</h1>
             </div>
             <div className="flex gap-2">
               {trades.length > 0 && (
                 <>
-                  <Button onClick={() => setShowUpload(true)} variant="outline" disabled={isSaving}>
-                    Importar Novo Relatório
+                  <Button onClick={() => setShowUpload(true)} variant="outline" size="sm" disabled={isSaving}>
+                    Importar Relatório
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={isDeleting}>
+                      <Button variant="destructive" size="sm" disabled={isDeleting}>
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir Tudo
+                        Excluir
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Isso irá excluir permanentemente todas as {trades.length} operações do banco de dados. Esta ação não pode ser desfeita.
+                          Isso irá excluir permanentemente todas as {trades.length} operações.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={() => deleteAllTrades()}>
-                          Excluir Todas as Operações
+                          Excluir
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -113,67 +146,99 @@ const Index = () => {
               )}
             </div>
           ) : (
-            <div className="space-y-6 animate-fade-in">
-              {/* KPI Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-4">
-                <MetricCard
-                  title="Saldo Inicial"
-                  value={`$${INITIAL_BALANCE.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                  icon={DollarSign}
-                  delay={0}
-                />
-                <MetricCard
-                  title="Saldo Atual"
-                  value={`$${currentBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                  icon={DollarSign}
-                  trend={metrics.totalPnL >= 0 ? "up" : "down"}
-                  delay={0.05}
-                />
-                <MetricCard
-                  title="Operações"
-                  value={metrics.totalTrades}
-                  icon={Activity}
-                  delay={0.1}
-                />
-                <MetricCard
-                  title="Win Rate"
-                  value={`${metrics.winRate.toFixed(1)}%`}
-                  subtitle={`${metrics.totalWins}G / ${metrics.totalLosses}P`}
-                  icon={Target}
-                  trend={metrics.winRate >= 50 ? "up" : "down"}
-                  delay={0.15}
-                />
-                <MetricCard
-                  title="Profit Factor"
+            <div className="space-y-4">
+              {/* Top Stats Row */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <StatCard title="Total Trades" value={metrics.totalTrades} tooltip="Total de operações realizadas">
+                  <DonutChart wins={metrics.totalWins} losses={metrics.totalLosses} />
+                </StatCard>
+
+                <StatCard 
+                  title="Win Rate" 
+                  value={`${metrics.winRate.toFixed(2)}%`} 
+                  tooltip="Porcentagem de trades vencedores"
+                >
+                  <DonutChart wins={metrics.totalWins} losses={metrics.totalLosses} />
+                </StatCard>
+
+                <StatCard 
+                  title="Gross P&L" 
+                  value={`$${metrics.totalPnL.toFixed(2)}`}
+                  subtitle={`↓ Fees: $${Math.abs(totalFees).toFixed(2)}`}
+                  tooltip="Lucro/Prejuízo bruto total"
+                  className={metrics.totalPnL >= 0 ? '' : ''}
+                >
+                  <MiniAreaChart 
+                    data={drawdownData.length > 0 ? drawdownData : [0]} 
+                    color={metrics.totalPnL >= 0 ? 'hsl(var(--success))' : 'hsl(var(--danger))'}
+                  />
+                </StatCard>
+
+                <StatCard 
+                  title="Avg W/L $" 
+                  value={avgWinLossRatio.toFixed(2)}
+                  tooltip="Relação média entre ganho e perda"
+                >
+                  <ProgressBar leftValue={avgWin} rightValue={avgLoss} />
+                </StatCard>
+
+                <StatCard 
+                  title="Current Balance" 
+                  value={`$${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                  tooltip="Saldo atual da conta"
+                  className={metrics.totalPnL >= 0 ? 'border-success/30' : 'border-danger/30'}
+                >
+                  <div className={`w-full h-2 rounded-full ${metrics.totalPnL >= 0 ? 'bg-success' : 'bg-danger'}`} />
+                </StatCard>
+
+                <StatCard 
+                  title="Profit Factor" 
                   value={metrics.profitFactor === Infinity ? "∞" : metrics.profitFactor.toFixed(2)}
-                  icon={Award}
-                  trend={metrics.profitFactor >= 1.5 ? "up" : "down"}
-                  delay={0.2}
-                />
-                <MetricCard
-                  title="P&L Total"
-                  value={`$${metrics.totalPnL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                  icon={DollarSign}
-                  trend={metrics.totalPnL >= 0 ? "up" : "down"}
-                  delay={0.25}
-                />
-                <MetricCard
-                  title="Expectativa"
+                  tooltip="Razão entre lucros e perdas totais"
+                >
+                  <ProgressBar 
+                    leftValue={winTrades.reduce((s, t) => s + t.netProfit, 0)} 
+                    rightValue={Math.abs(lossTrades.reduce((s, t) => s + t.netProfit, 0))} 
+                  />
+                </StatCard>
+              </div>
+
+              {/* Second Stats Row */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <StatCard 
+                  title="Max Drawdown" 
+                  value={`$${Math.abs(maxDrawdown).toFixed(2)}`}
+                  tooltip="Maior perda acumulada do pico"
+                >
+                  <MiniAreaChart data={drawdownData.length > 0 ? drawdownData : [0]} />
+                </StatCard>
+
+                <StatCard 
+                  title="Biggest Trades" 
+                  value=""
+                  tooltip="Maior ganho e maior perda"
+                >
+                  <BiggestTradesBar winAmount={biggestWin} lossAmount={biggestLoss} />
+                </StatCard>
+
+                <StatCard 
+                  title="Expectancy" 
                   value={`$${metrics.expectancy.toFixed(2)}`}
                   subtitle="por trade"
-                  icon={TrendingUp}
-                  trend={metrics.expectancy >= 0 ? "up" : "down"}
-                  delay={0.3}
+                  tooltip="Expectativa matemática por operação"
                 />
               </div>
 
-              {/* Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <EquityCurve trades={trades} initialBalance={INITIAL_BALANCE} />
-                <DrawdownChart trades={trades} initialBalance={INITIAL_BALANCE} />
+              {/* Charts Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2">
+                  <CumulativePnLChart trades={trades} initialBalance={INITIAL_BALANCE} />
+                </div>
+                <div className="space-y-4">
+                  <MonthlyPnLChart trades={trades} />
+                  <DailyPnLChart trades={trades} />
+                </div>
               </div>
-              
-              <TradesTable trades={trades} />
             </div>
           )}
         </div>
