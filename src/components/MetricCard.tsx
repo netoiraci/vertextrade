@@ -22,23 +22,23 @@ export function MetricCard({ title, value, subtitle, icon: Icon, trend = "neutra
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
-      className="bg-card border border-border rounded-lg p-6 hover:border-primary/30 transition-all duration-300"
+      className="bg-card border border-border rounded-lg p-4 hover:border-primary/30 transition-all duration-300 min-w-0"
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm text-muted-foreground font-medium">{title}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-muted-foreground font-medium truncate">{title}</p>
           <motion.p
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: delay + 0.2 }}
-            className={`text-3xl font-bold mt-2 ${trendColors[trend]}`}
+            className={`text-lg xl:text-xl 2xl:text-2xl font-bold mt-1 ${trendColors[trend]}`}
           >
             {value}
           </motion.p>
-          {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
         </div>
-        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Icon className="h-6 w-6 text-primary" />
+        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
       </div>
     </motion.div>
