@@ -115,7 +115,7 @@ const Index = () => {
           ) : (
             <div className="space-y-6 animate-fade-in">
               {/* KPI Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-4">
                 <MetricCard
                   title="Saldo Inicial"
                   value={`$${INITIAL_BALANCE.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
@@ -130,13 +130,13 @@ const Index = () => {
                   delay={0.05}
                 />
                 <MetricCard
-                  title="Total de Operações"
+                  title="Operações"
                   value={metrics.totalTrades}
                   icon={Activity}
                   delay={0.1}
                 />
                 <MetricCard
-                  title="Taxa de Acerto"
+                  title="Win Rate"
                   value={`${metrics.winRate.toFixed(1)}%`}
                   subtitle={`${metrics.totalWins}G / ${metrics.totalLosses}P`}
                   icon={Target}
@@ -144,7 +144,7 @@ const Index = () => {
                   delay={0.15}
                 />
                 <MetricCard
-                  title="Fator de Lucro"
+                  title="Profit Factor"
                   value={metrics.profitFactor === Infinity ? "∞" : metrics.profitFactor.toFixed(2)}
                   icon={Award}
                   trend={metrics.profitFactor >= 1.5 ? "up" : "down"}
@@ -160,7 +160,7 @@ const Index = () => {
                 <MetricCard
                   title="Expectativa"
                   value={`$${metrics.expectancy.toFixed(2)}`}
-                  subtitle="por operação"
+                  subtitle="por trade"
                   icon={TrendingUp}
                   trend={metrics.expectancy >= 0 ? "up" : "down"}
                   delay={0.3}

@@ -7,6 +7,11 @@ import Index from "./pages/Index";
 import Calendar from "./pages/Calendar";
 import Journal from "./pages/Journal";
 import Reports from "./pages/Reports";
+import Backtest from "./pages/Backtest";
+import Calculator from "./pages/Calculator";
+import PropFirm from "./pages/PropFirm";
+import Withdrawals from "./pages/Withdrawals";
+import News from "./pages/News";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +27,11 @@ const App = () => (
           <Route path="/journal" element={<Journal />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/backtest" element={<Backtest />} />
+          <Route path="/calculator" element={<Calculator />} />
+          <Route path="/prop-firm" element={<PropFirm />} />
+          <Route path="/withdrawals" element={<Withdrawals />} />
+          <Route path="/news" element={<News />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
