@@ -101,11 +101,13 @@ export function RiskMetrics({ trades, initialBalance }: RiskMetricsProps) {
     const downsideDeviation = Math.sqrt(downsideVariance);
 
     // Sharpe Ratio (simplified, assuming risk-free rate = 0)
-    // Annualized: multiply by sqrt of average trades per year (approx 252 trading days)
-    const sharpeRatio = stdDev > 0 ? (avgReturn / stdDev) * Math.sqrt(252) : 0;
+    // Usando sqrt do número de trades para normalização ao invés de assumir 252 dias
+    const sharpeRatio = stdDev > 0 ? (avgReturn / stdDev) * Math.sqrt(Math.min(trades.length, 252)) : 0;
     
-    // Sortino Ratio
-    const sortinoRatio = downsideDeviation > 0 ? (avgReturn / downsideDeviation) * Math.sqrt(252) : avgReturn > 0 ? Infinity : 0;
+    // Sortino Ratio (mesma normalização)
+    const sortinoRatio = downsideDeviation > 0 
+      ? (avgReturn / downsideDeviation) * Math.sqrt(Math.min(trades.length, 252)) 
+      : avgReturn > 0 ? Infinity : 0;
 
     // Recovery Factor = Net Profit / Max Drawdown
     const recoveryFactor = maxDrawdown > 0 ? totalPnL / maxDrawdown : totalPnL > 0 ? Infinity : 0;
