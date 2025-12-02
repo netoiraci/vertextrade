@@ -41,8 +41,9 @@ const Index = () => {
 
   const metrics = calculateMetrics(trades);
   
+  // Current balance usa netPnL (valor líquido após fees)
   const currentBalance = trades.length > 0 
-    ? INITIAL_BALANCE + metrics.totalPnL 
+    ? INITIAL_BALANCE + metrics.netPnL 
     : INITIAL_BALANCE;
 
   // Calculate drawdown data
@@ -65,16 +66,8 @@ const Index = () => {
   const biggestWin = trades.length > 0 ? Math.max(...trades.map(t => t.netProfit)) : 0;
   const biggestLoss = trades.length > 0 ? Math.min(...trades.map(t => t.netProfit)) : 0;
 
-  // Calculate avg win/loss
-  const winTrades = trades.filter(t => t.isWin);
-  const lossTrades = trades.filter(t => !t.isWin);
-  const avgWin = winTrades.length > 0 ? winTrades.reduce((sum, t) => sum + t.netProfit, 0) / winTrades.length : 0;
-  const avgLoss = lossTrades.length > 0 ? Math.abs(lossTrades.reduce((sum, t) => sum + t.netProfit, 0) / lossTrades.length) : 0;
-  const avgWinLossRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
-
-  // Gross profit and fees
-  const grossProfit = trades.reduce((sum, t) => sum + t.profit, 0);
-  const totalFees = trades.reduce((sum, t) => sum + (t.commission || 0) + (t.swap || 0), 0);
+  // Avg win/loss ratio já calculado em metrics
+  const avgWinLossRatio = metrics.avgLoss > 0 ? metrics.avgWin / metrics.avgLoss : 0;
 
   if (isLoading) {
     return (
@@ -162,15 +155,15 @@ const Index = () => {
                 </StatCard>
 
                 <StatCard 
-                  title="Gross P&L" 
-                  value={`$${metrics.totalPnL.toFixed(2)}`}
-                  subtitle={`↓ Fees: $${Math.abs(totalFees).toFixed(2)}`}
-                  tooltip="Lucro/Prejuízo bruto total"
-                  className={metrics.totalPnL >= 0 ? '' : ''}
+                  title="Net P&L" 
+                  value={`$${metrics.netPnL.toFixed(2)}`}
+                  subtitle={`↓ Fees: $${Math.abs(metrics.totalFees).toFixed(2)}`}
+                  tooltip="Lucro/Prejuízo líquido total (após fees)"
+                  className={metrics.netPnL >= 0 ? '' : ''}
                 >
                   <MiniAreaChart 
                     data={drawdownData.length > 0 ? drawdownData : [0]} 
-                    color={metrics.totalPnL >= 0 ? 'hsl(var(--success))' : 'hsl(var(--danger))'}
+                    color={metrics.netPnL >= 0 ? 'hsl(var(--success))' : 'hsl(var(--danger))'}
                   />
                 </StatCard>
 
@@ -179,16 +172,16 @@ const Index = () => {
                   value={avgWinLossRatio.toFixed(2)}
                   tooltip="Relação média entre ganho e perda"
                 >
-                  <ProgressBar leftValue={avgWin} rightValue={avgLoss} />
+                  <ProgressBar leftValue={metrics.avgWin} rightValue={metrics.avgLoss} />
                 </StatCard>
 
                 <StatCard 
                   title="Current Balance" 
                   value={`$${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
                   tooltip="Saldo atual da conta"
-                  className={metrics.totalPnL >= 0 ? 'border-success/30' : 'border-danger/30'}
+                  className={metrics.netPnL >= 0 ? 'border-success/30' : 'border-danger/30'}
                 >
-                  <div className={`w-full h-2 rounded-full ${metrics.totalPnL >= 0 ? 'bg-success' : 'bg-danger'}`} />
+                  <div className={`w-full h-2 rounded-full ${metrics.netPnL >= 0 ? 'bg-success' : 'bg-danger'}`} />
                 </StatCard>
 
                 <StatCard 
@@ -197,8 +190,8 @@ const Index = () => {
                   tooltip="Razão entre lucros e perdas totais"
                 >
                   <ProgressBar 
-                    leftValue={winTrades.reduce((s, t) => s + t.netProfit, 0)} 
-                    rightValue={Math.abs(lossTrades.reduce((s, t) => s + t.netProfit, 0))} 
+                    leftValue={metrics.avgWin * metrics.totalWins} 
+                    rightValue={metrics.avgLoss * metrics.totalLosses} 
                   />
                 </StatCard>
               </div>

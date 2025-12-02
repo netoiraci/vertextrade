@@ -25,28 +25,31 @@ const Reports = () => {
     const durations = trades.map(t => t.duration);
     const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
     
-    const winningTrades = trades.filter(t => t.isWin);
-    const losingTrades = trades.filter(t => !t.isWin);
+    // Calcular sequências consecutivas corretamente
+    let maxConsecutiveWins = 0;
+    let maxConsecutiveLosses = 0;
+    let currentWinStreak = 0;
+    let currentLossStreak = 0;
     
-    const consecutiveWins = trades.reduce((max, trade, i) => {
-      let count = 0;
-      for (let j = i; j < trades.length && trades[j].isWin; j++) count++;
-      return Math.max(max, count);
-    }, 0);
-    
-    const consecutiveLosses = trades.reduce((max, trade, i) => {
-      let count = 0;
-      for (let j = i; j < trades.length && !trades[j].isWin; j++) count++;
-      return Math.max(max, count);
-    }, 0);
+    trades.forEach((trade) => {
+      if (trade.isWin) {
+        currentWinStreak++;
+        currentLossStreak = 0;
+        maxConsecutiveWins = Math.max(maxConsecutiveWins, currentWinStreak);
+      } else {
+        currentLossStreak++;
+        currentWinStreak = 0;
+        maxConsecutiveLosses = Math.max(maxConsecutiveLosses, currentLossStreak);
+      }
+    });
 
     const totalCommission = trades.reduce((sum, t) => sum + (t.commission || 0), 0);
     const totalSwap = trades.reduce((sum, t) => sum + (t.swap || 0), 0);
 
     return {
-      avgDuration: avgDuration / 60, // em minutos
-      consecutiveWins,
-      consecutiveLosses,
+      avgDuration: avgDuration / 60, // converter de minutos para horas
+      consecutiveWins: maxConsecutiveWins,
+      consecutiveLosses: maxConsecutiveLosses,
       totalCommission,
       totalSwap,
       largestLoss: Math.min(...trades.map(t => t.netProfit)),
@@ -163,7 +166,10 @@ const Reports = () => {
                       <h4 className="text-sm text-muted-foreground">Duração Média</h4>
                     </div>
                     <p className="text-2xl font-bold text-foreground">
-                      {additionalMetrics?.avgDuration.toFixed(0)} min
+                      {additionalMetrics && additionalMetrics.avgDuration >= 60 
+                        ? `${(additionalMetrics.avgDuration / 60).toFixed(1)} h`
+                        : `${additionalMetrics?.avgDuration.toFixed(0)} min`
+                      }
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">Tempo por operação</p>
                   </div>
@@ -330,7 +336,10 @@ const Reports = () => {
                           <div>
                             <p className="font-medium text-foreground">Duração Média</p>
                             <p className="text-muted-foreground">
-                              {additionalMetrics?.avgDuration.toFixed(0)} minutos por operação
+                              {additionalMetrics && additionalMetrics.avgDuration >= 60 
+                                ? `${(additionalMetrics.avgDuration / 60).toFixed(1)} horas por operação`
+                                : `${additionalMetrics?.avgDuration.toFixed(0)} minutos por operação`
+                              }
                             </p>
                           </div>
                         </div>

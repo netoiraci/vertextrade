@@ -105,6 +105,7 @@ export function calculateMetrics(trades: Trade[]) {
       winRate: 0,
       profitFactor: 0,
       totalPnL: 0,
+      netPnL: 0,
       expectancy: 0,
       totalWins: 0,
       totalLosses: 0,
@@ -114,23 +115,45 @@ export function calculateMetrics(trades: Trade[]) {
       avgLoss: 0,
       largestWin: 0,
       largestLoss: 0,
+      totalCommission: 0,
+      totalSwap: 0,
+      totalFees: 0,
     };
   }
   
   const wins = trades.filter(t => t.isWin);
   const losses = trades.filter(t => !t.isWin);
   
-  const grossProfit = wins.reduce((sum, t) => sum + t.netProfit, 0);
-  const grossLoss = Math.abs(losses.reduce((sum, t) => sum + t.netProfit, 0));
-  const totalPnL = trades.reduce((sum, t) => sum + t.netProfit, 0);
+  // Gross Profit/Loss = soma dos valores de profit bruto (sem fees)
+  const grossProfit = wins.reduce((sum, t) => sum + t.profit, 0);
+  const grossLoss = Math.abs(losses.reduce((sum, t) => sum + t.profit, 0));
+  
+  // Net P&L = soma dos valores líquidos (com fees)
+  const netPnL = trades.reduce((sum, t) => sum + t.netProfit, 0);
+  
+  // Total P&L = apenas soma de profits (sem fees) para compatibilidade
+  const totalPnL = trades.reduce((sum, t) => sum + t.profit, 0);
+  
+  // Total de comissões e swaps
+  const totalCommission = trades.reduce((sum, t) => sum + (t.commission || 0), 0);
+  const totalSwap = trades.reduce((sum, t) => sum + (t.swap || 0), 0);
+  const totalFees = totalCommission + totalSwap;
   
   const winRate = (wins.length / trades.length) * 100;
-  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
-  const expectancy = totalPnL / trades.length;
   
-  const avgWin = wins.length > 0 ? grossProfit / wins.length : 0;
-  const avgLoss = losses.length > 0 ? grossLoss / losses.length : 0;
+  // Profit Factor = Gross Profit / Gross Loss (usando netProfit para incluir impacto real)
+  const grossProfitNet = wins.reduce((sum, t) => sum + t.netProfit, 0);
+  const grossLossNet = Math.abs(losses.reduce((sum, t) => sum + t.netProfit, 0));
+  const profitFactor = grossLossNet > 0 ? grossProfitNet / grossLossNet : grossProfitNet > 0 ? Infinity : 0;
   
+  // Expectancy = média de P&L líquido por trade
+  const expectancy = netPnL / trades.length;
+  
+  // Médias usando netProfit (valor real após fees)
+  const avgWin = wins.length > 0 ? grossProfitNet / wins.length : 0;
+  const avgLoss = losses.length > 0 ? grossLossNet / losses.length : 0;
+  
+  // Maior ganho e perda (usando netProfit)
   const largestWin = wins.length > 0 ? Math.max(...wins.map(t => t.netProfit)) : 0;
   const largestLoss = losses.length > 0 ? Math.min(...losses.map(t => t.netProfit)) : 0;
   
@@ -139,6 +162,7 @@ export function calculateMetrics(trades: Trade[]) {
     winRate,
     profitFactor,
     totalPnL,
+    netPnL,
     expectancy,
     totalWins: wins.length,
     totalLosses: losses.length,
@@ -148,5 +172,8 @@ export function calculateMetrics(trades: Trade[]) {
     avgLoss,
     largestWin,
     largestLoss,
+    totalCommission,
+    totalSwap,
+    totalFees,
   };
 }
