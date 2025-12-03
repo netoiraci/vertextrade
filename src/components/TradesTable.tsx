@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SmartTag } from "@/components/dashboard/SmartTag";
 
 interface TradesTableProps {
   trades: Trade[];
@@ -102,6 +103,7 @@ export function TradesTable({ trades }: TradesTableProps) {
           <TableHeader>
             <TableRow className="hover:bg-transparent border-b border-border">
               <TableHead className="text-xs text-muted-foreground font-medium">STATUS</TableHead>
+              <TableHead className="text-xs text-muted-foreground font-medium">TAGS</TableHead>
               <TableHead className="text-xs">
                 <SortButton field="symbol">SYMBOL</SortButton>
               </TableHead>
@@ -136,6 +138,9 @@ export function TradesTable({ trades }: TradesTableProps) {
                   <span className="px-2 py-1 rounded text-xs bg-secondary text-muted-foreground">
                     Closed
                   </span>
+                </TableCell>
+                <TableCell>
+                  <SmartTag trade={trade} />
                 </TableCell>
                 <TableCell className="font-medium text-sm uppercase">{trade.symbol}</TableCell>
                 <TableCell className="text-sm">
