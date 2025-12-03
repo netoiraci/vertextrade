@@ -24,6 +24,9 @@ import { BiggestTradesBar } from "@/components/dashboard/BiggestTradesBar";
 import { CumulativePnLChart } from "@/components/dashboard/CumulativePnLChart";
 import { MonthlyPnLChart } from "@/components/dashboard/MonthlyPnLChart";
 import { DailyPnLChart } from "@/components/dashboard/DailyPnLChart";
+import { TradingHeatmap } from "@/components/dashboard/TradingHeatmap";
+import { HoldingTimeDistribution } from "@/components/dashboard/HoldingTimeDistribution";
+import { StreakBadge } from "@/components/dashboard/StreakBadge";
 
 const INITIAL_BALANCE = 10000;
 
@@ -88,9 +91,10 @@ const Index = () => {
         <div className="p-6">
           {/* Header */}
           <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span className="text-primary font-bold">|</span>
               <h1 className="text-xl font-semibold text-foreground">Overview Dashboard</h1>
+              {trades.length > 0 && <StreakBadge trades={trades} />}
             </div>
             <div className="flex gap-2">
               {trades.length > 0 && (
@@ -231,6 +235,12 @@ const Index = () => {
                   <MonthlyPnLChart trades={trades} />
                   <DailyPnLChart trades={trades} />
                 </div>
+              </div>
+
+              {/* Analysis Widgets */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <TradingHeatmap trades={trades} />
+                <HoldingTimeDistribution trades={trades} />
               </div>
             </div>
           )}
