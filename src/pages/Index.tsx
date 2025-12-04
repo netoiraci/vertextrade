@@ -28,7 +28,7 @@ import { TradingHeatmap } from "@/components/dashboard/TradingHeatmap";
 import { HoldingTimeDistribution } from "@/components/dashboard/HoldingTimeDistribution";
 import { StreakBadge } from "@/components/dashboard/StreakBadge";
 
-const INITIAL_BALANCE = 10000;
+const INITIAL_BALANCE = 100000;
 
 const Index = () => {
   const { trades, saveTrades, deleteAllTrades, isLoading, isSaving, isDeleting } = useTrades();
