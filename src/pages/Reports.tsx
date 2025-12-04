@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, Calendar, Clock, Target, Award, DollarSign, BarChart3, Timer } from "lucide-react";
 import { useMemo } from "react";
 
-const INITIAL_BALANCE = 10000;
+const INITIAL_BALANCE = 100000;
 
 const Reports = () => {
   const { trades, isLoading } = useTrades();
@@ -25,13 +25,16 @@ const Reports = () => {
     const durations = trades.map(t => t.duration);
     const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
     
+    // IMPORTANTE: Ordenar trades por data de fechamento (mais antigo primeiro)
+    const sortedTrades = [...trades].sort((a, b) => a.closeTime.getTime() - b.closeTime.getTime());
+    
     // Calcular sequências consecutivas corretamente
     let maxConsecutiveWins = 0;
     let maxConsecutiveLosses = 0;
     let currentWinStreak = 0;
     let currentLossStreak = 0;
     
-    trades.forEach((trade) => {
+    sortedTrades.forEach((trade) => {
       if (trade.isWin) {
         currentWinStreak++;
         currentLossStreak = 0;
