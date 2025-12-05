@@ -27,8 +27,15 @@ import { DailyPnLChart } from "@/components/dashboard/DailyPnLChart";
 import { TradingHeatmap } from "@/components/dashboard/TradingHeatmap";
 import { HoldingTimeDistribution } from "@/components/dashboard/HoldingTimeDistribution";
 import { StreakBadge } from "@/components/dashboard/StreakBadge";
+import { PropFirmGuardian } from "@/components/dashboard/PropFirmGuardian";
+import { AutoInsights } from "@/components/dashboard/AutoInsights";
+import { PnLScatterPlot } from "@/components/dashboard/PnLScatterPlot";
+import { SQNIndicator } from "@/components/dashboard/SQNIndicator";
+import { useMemo } from "react";
 
 const INITIAL_BALANCE = 100000;
+const DAILY_LOSS_LIMIT = 5000;
+const MAX_DRAWDOWN_LIMIT = 10000;
 
 const Index = () => {
   const { trades, saveTrades, deleteAllTrades, isLoading, isSaving, isDeleting } = useTrades();
@@ -49,6 +56,20 @@ const Index = () => {
     ? INITIAL_BALANCE + metrics.netPnL 
     : INITIAL_BALANCE;
 
+  // Today's P&L
+  const todayPnL = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return trades
+      .filter(t => {
+        const tradeDate = new Date(t.closeTime);
+        tradeDate.setHours(0, 0, 0, 0);
+        return tradeDate.getTime() === today.getTime();
+      })
+      .reduce((sum, t) => sum + t.netProfit, 0);
+  }, [trades]);
+
   // Calculate drawdown data
   const drawdownData = trades.length > 0 ? (() => {
     const sorted = [...trades].sort((a, b) => a.closeTime.getTime() - b.closeTime.getTime());
@@ -63,7 +84,7 @@ const Index = () => {
     return data;
   })() : [];
 
-  const maxDrawdown = drawdownData.length > 0 ? Math.min(...drawdownData) : 0;
+  const maxDrawdown = drawdownData.length > 0 ? Math.abs(Math.min(...drawdownData)) : 0;
 
   // Find biggest win and loss
   const biggestWin = trades.length > 0 ? Math.max(...trades.map(t => t.netProfit)) : 0;
@@ -90,7 +111,7 @@ const Index = () => {
       <main className="flex-1 overflow-auto">
         <div className="p-6">
           {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-primary font-bold">|</span>
               <h1 className="text-xl font-semibold text-foreground">Overview Dashboard</h1>
@@ -144,6 +165,16 @@ const Index = () => {
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Prop Firm Guardian - Risk Bar */}
+              <PropFirmGuardian
+                todayPnL={todayPnL}
+                dailyLossLimit={DAILY_LOSS_LIMIT}
+                maxDrawdown={maxDrawdown}
+                maxDrawdownLimit={MAX_DRAWDOWN_LIMIT}
+                currentBalance={currentBalance}
+                initialBalance={INITIAL_BALANCE}
+              />
+
               {/* Top Stats Row */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <StatCard title="Total Trades" value={metrics.totalTrades} tooltip="Total de operações realizadas">
@@ -201,10 +232,10 @@ const Index = () => {
               </div>
 
               {/* Second Stats Row */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatCard 
                   title="Max Drawdown" 
-                  value={`$${Math.abs(maxDrawdown).toFixed(2)}`}
+                  value={`$${maxDrawdown.toFixed(2)}`}
                   tooltip="Maior perda acumulada do pico"
                 >
                   <MiniAreaChart data={drawdownData.length > 0 ? drawdownData : [0]} />
@@ -224,16 +255,25 @@ const Index = () => {
                   subtitle="por trade"
                   tooltip="Expectativa matemática por operação"
                 />
+
+                <SQNIndicator trades={trades} />
               </div>
 
-              {/* Charts Section */}
+              {/* Main Content Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2">
+                {/* Left Column - Charts */}
+                <div className="lg:col-span-2 space-y-4">
                   <CumulativePnLChart trades={trades} initialBalance={INITIAL_BALANCE} />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <MonthlyPnLChart trades={trades} />
+                    <DailyPnLChart trades={trades} />
+                  </div>
                 </div>
+
+                {/* Right Column - Auto Insights */}
                 <div className="space-y-4">
-                  <MonthlyPnLChart trades={trades} />
-                  <DailyPnLChart trades={trades} />
+                  <AutoInsights trades={trades} />
                 </div>
               </div>
 
@@ -241,6 +281,11 @@ const Index = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <TradingHeatmap trades={trades} />
                 <HoldingTimeDistribution trades={trades} />
+              </div>
+
+              {/* Scatter Plot */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <PnLScatterPlot trades={trades} />
               </div>
             </div>
           )}
