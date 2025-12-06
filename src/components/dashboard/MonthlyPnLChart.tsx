@@ -1,6 +1,7 @@
 import { Trade } from "@/lib/parseTradeReport";
 import { useMemo } from "react";
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
+import { Info } from "lucide-react";
 
 interface MonthlyPnLChartProps {
   trades: Trade[];
@@ -23,31 +24,41 @@ export function MonthlyPnLChart({ trades }: MonthlyPnLChartProps) {
     }));
   }, [trades]);
 
+  const minPnL = Math.min(...monthlyData.map(d => d.pnl));
+  const maxPnL = Math.max(...monthlyData.map(d => d.pnl));
+  const padding = Math.max(Math.abs(maxPnL), Math.abs(minPnL)) * 0.2;
+
   return (
     <div className="bg-card border border-border rounded-lg p-4">
-      <h3 className="text-sm font-medium text-muted-foreground mb-4">Monthly Gross P&L</h3>
-      <ResponsiveContainer width="100%" height={120}>
-        <LineChart data={monthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+      <div className="flex items-center gap-1 mb-4">
+        <h3 className="text-sm font-medium text-muted-foreground">Monthly Net P&L</h3>
+        <Info className="h-3 w-3 text-muted-foreground" />
+      </div>
+      <ResponsiveContainer width="100%" height={140}>
+        <LineChart data={monthlyData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
           <XAxis 
             dataKey="month" 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+            tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
           />
           <YAxis 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-            tickFormatter={(value) => `$${value}`}
+            tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+            tickFormatter={(value) => `$${value.toLocaleString()}`}
+            domain={[minPnL - padding, maxPnL + padding]}
           />
+          <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.3} />
           <Tooltip 
             contentStyle={{ 
               backgroundColor: 'hsl(var(--card))', 
               border: '1px solid hsl(var(--border))',
-              borderRadius: '8px'
+              borderRadius: '8px',
+              fontSize: '12px'
             }}
             labelStyle={{ color: 'hsl(var(--foreground))' }}
-            formatter={(value: number) => [`$${value.toFixed(2)}`, 'P&L']}
+            formatter={(value: number) => [`$${value.toFixed(2)}`, 'Net P&L']}
           />
           <Line 
             type="monotone" 

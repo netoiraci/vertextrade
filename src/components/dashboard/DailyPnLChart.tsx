@@ -1,6 +1,7 @@
 import { Trade } from "@/lib/parseTradeReport";
 import { useMemo } from "react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, ReferenceLine } from "recharts";
+import { Info } from "lucide-react";
 
 interface DailyPnLChartProps {
   trades: Trade[];
@@ -12,7 +13,7 @@ export function DailyPnLChart({ trades }: DailyPnLChartProps) {
     
     // Get last 30 days
     const today = new Date();
-    const last30Days: { date: string; pnl: number }[] = [];
+    const last30Days: { date: string; pnl: number; displayDate: string }[] = [];
     
     for (let i = 29; i >= 0; i--) {
       const date = new Date(today);
@@ -30,41 +31,54 @@ export function DailyPnLChart({ trades }: DailyPnLChartProps) {
     });
 
     dayMap.forEach((pnl, date) => {
-      last30Days.push({ date, pnl });
+      last30Days.push({ 
+        date, 
+        pnl,
+        displayDate: date.slice(5).replace('-', '/')
+      });
     });
 
     return last30Days.sort((a, b) => a.date.localeCompare(b.date));
   }, [trades]);
 
+  const minPnL = Math.min(...dailyData.map(d => d.pnl), 0);
+  const maxPnL = Math.max(...dailyData.map(d => d.pnl), 0);
+  const yDomain = [Math.floor(minPnL * 1.2), Math.ceil(maxPnL * 1.2)];
+
   return (
     <div className="bg-card border border-border rounded-lg p-4">
-      <h3 className="text-sm font-medium text-muted-foreground mb-4">Last 30 Days Gross P&L</h3>
-      <ResponsiveContainer width="100%" height={120}>
-        <BarChart data={dailyData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+      <div className="flex items-center gap-1 mb-4">
+        <h3 className="text-sm font-medium text-muted-foreground">Last 30 Days Net P&L</h3>
+        <Info className="h-3 w-3 text-muted-foreground" />
+      </div>
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart data={dailyData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
           <XAxis 
-            dataKey="date" 
+            dataKey="displayDate" 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }}
-            tickFormatter={(value) => value.slice(5)}
-            interval={6}
+            tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+            interval={4}
           />
           <YAxis 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+            tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
             tickFormatter={(value) => `$${value}`}
+            domain={yDomain}
           />
+          <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.3} />
           <Tooltip 
             contentStyle={{ 
               backgroundColor: 'hsl(var(--card))', 
               border: '1px solid hsl(var(--border))',
-              borderRadius: '8px'
+              borderRadius: '8px',
+              fontSize: '12px'
             }}
             labelStyle={{ color: 'hsl(var(--foreground))' }}
-            formatter={(value: number) => [`$${value.toFixed(2)}`, 'P&L']}
+            formatter={(value: number) => [`$${value.toFixed(2)}`, 'Net P&L']}
           />
-          <Bar dataKey="pnl" radius={[2, 2, 0, 0]}>
+          <Bar dataKey="pnl" radius={[2, 2, 0, 0]} maxBarSize={12}>
             {dailyData.map((entry, index) => (
               <Cell 
                 key={`cell-${index}`} 
