@@ -9,19 +9,24 @@ interface DailyPnLChartProps {
 
 export function DailyPnLChart({ trades }: DailyPnLChartProps) {
   const dailyData = useMemo(() => {
+    if (trades.length === 0) return [];
+
+    // Find the most recent trade date
+    const sortedTrades = [...trades].sort((a, b) => b.closeTime.getTime() - a.closeTime.getTime());
+    const mostRecentDate = new Date(sortedTrades[0].closeTime);
+    mostRecentDate.setHours(23, 59, 59, 999);
+
+    // Create a map for the last 30 days from the most recent trade
     const dayMap = new Map<string, number>();
     
-    // Get last 30 days
-    const today = new Date();
-    const last30Days: { date: string; pnl: number; displayDate: string }[] = [];
-    
     for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
+      const date = new Date(mostRecentDate);
       date.setDate(date.getDate() - i);
       const dateKey = date.toISOString().split('T')[0];
       dayMap.set(dateKey, 0);
     }
 
+    // Sum P&L by day
     trades.forEach(trade => {
       const dateKey = trade.closeTime.toISOString().split('T')[0];
       if (dayMap.has(dateKey)) {
@@ -30,6 +35,8 @@ export function DailyPnLChart({ trades }: DailyPnLChartProps) {
       }
     });
 
+    // Convert to array and sort chronologically
+    const last30Days: { date: string; pnl: number; displayDate: string }[] = [];
     dayMap.forEach((pnl, date) => {
       last30Days.push({ 
         date, 
