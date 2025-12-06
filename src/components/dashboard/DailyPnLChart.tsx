@@ -11,41 +11,29 @@ export function DailyPnLChart({ trades }: DailyPnLChartProps) {
   const dailyData = useMemo(() => {
     if (trades.length === 0) return [];
 
-    // Find the most recent trade date
-    const sortedTrades = [...trades].sort((a, b) => b.closeTime.getTime() - a.closeTime.getTime());
-    const mostRecentDate = new Date(sortedTrades[0].closeTime);
-    mostRecentDate.setHours(23, 59, 59, 999);
-
-    // Create a map for the last 30 days from the most recent trade
+    // Group trades by day and sum P&L
     const dayMap = new Map<string, number>();
     
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(mostRecentDate);
-      date.setDate(date.getDate() - i);
-      const dateKey = date.toISOString().split('T')[0];
-      dayMap.set(dateKey, 0);
-    }
-
-    // Sum P&L by day
     trades.forEach(trade => {
       const dateKey = trade.closeTime.toISOString().split('T')[0];
-      if (dayMap.has(dateKey)) {
-        const current = dayMap.get(dateKey) || 0;
-        dayMap.set(dateKey, current + trade.netProfit);
-      }
+      const current = dayMap.get(dateKey) || 0;
+      dayMap.set(dateKey, current + trade.netProfit);
     });
 
-    // Convert to array and sort chronologically
-    const last30Days: { date: string; pnl: number; displayDate: string }[] = [];
+    // Convert to array, filter only days with trades, and sort chronologically
+    const daysWithTrades: { date: string; pnl: number; displayDate: string }[] = [];
     dayMap.forEach((pnl, date) => {
-      last30Days.push({ 
+      daysWithTrades.push({ 
         date, 
         pnl,
         displayDate: date.slice(5).replace('-', '/')
       });
     });
 
-    return last30Days.sort((a, b) => a.date.localeCompare(b.date));
+    // Sort and take the last 30 days with trades
+    return daysWithTrades
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-30);
   }, [trades]);
 
   const minPnL = Math.min(...dailyData.map(d => d.pnl), 0);
