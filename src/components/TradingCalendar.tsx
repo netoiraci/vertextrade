@@ -151,79 +151,93 @@ export function TradingCalendar({ trades }: TradingCalendarProps) {
           </div>
         ))}
         
-        {/* Calendar Days */}
-        {monthData.map((dayData, index) => {
-          // Calculate weekly totals
-          const weekIndex = Math.floor(index / 7);
-          const isLastInRow = (index + 1) % 7 === 0 || index === monthData.length - 1;
+        {/* Calendar Days organized by weeks */}
+        {(() => {
+          const weeks: Array<Array<typeof monthData[0]>> = [];
+          let currentWeek: Array<typeof monthData[0]> = [];
           
-          if (!dayData) {
-            return (
-              <div 
-                key={`empty-${index}`} 
-                className="aspect-[4/3] bg-secondary/30 rounded-md"
-              />
-            );
+          monthData.forEach((dayData, index) => {
+            currentWeek.push(dayData);
+            if (currentWeek.length === 7) {
+              weeks.push(currentWeek);
+              currentWeek = [];
+            }
+          });
+          
+          // Add remaining days if any
+          if (currentWeek.length > 0) {
+            while (currentWeek.length < 7) {
+              currentWeek.push(null);
+            }
+            weeks.push(currentWeek);
           }
           
-          const { day, pnl, count, hasData } = dayData;
-          const isProfit = pnl > 0;
-          
-          return (
-            <div
-              key={day}
-              className={`aspect-[4/3] rounded-md p-2 flex flex-col justify-between transition-all hover:scale-[1.02] cursor-pointer ${
-                hasData 
-                  ? isProfit 
-                    ? 'bg-success/20 border border-success/30' 
-                    : 'bg-danger/20 border border-danger/30'
-                  : 'bg-secondary/30'
-              }`}
-            >
-              <div className="text-xs text-muted-foreground text-right">{day}</div>
-              {hasData && (
-                <div className="text-right">
-                  <p className={`text-sm font-semibold ${isProfit ? 'text-success' : 'text-danger'}`}>
-                    ${pnl.toFixed(2)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{count} Trade{count > 1 ? 's' : ''}</p>
+          return weeks.map((week, weekIndex) => {
+            // Calculate weekly total
+            const weekTotal = week.reduce((sum, d) => sum + (d?.pnl || 0), 0);
+            const hasWeekData = week.some(d => d?.hasData);
+            
+            return (
+              <>
+                {/* Week days */}
+                {week.map((dayData, dayIndex) => {
+                  if (!dayData) {
+                    return (
+                      <div 
+                        key={`empty-${weekIndex}-${dayIndex}`} 
+                        className="aspect-[4/3] bg-secondary/30 rounded-md"
+                      />
+                    );
+                  }
+                  
+                  const { day, pnl, count, hasData } = dayData;
+                  const isProfit = pnl > 0;
+                  
+                  return (
+                    <div
+                      key={`day-${weekIndex}-${day}`}
+                      className={`aspect-[4/3] rounded-md p-2 flex flex-col justify-between transition-all hover:scale-[1.02] cursor-pointer ${
+                        hasData 
+                          ? isProfit 
+                            ? 'bg-success/20 border border-success/30' 
+                            : 'bg-danger/20 border border-danger/30'
+                          : 'bg-secondary/30'
+                      }`}
+                    >
+                      <div className="text-xs text-muted-foreground text-right">{day}</div>
+                      {hasData && (
+                        <div className="text-right">
+                          <p className={`text-sm font-semibold ${isProfit ? 'text-success' : 'text-danger'}`}>
+                            ${pnl.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{count} Trade{count > 1 ? 's' : ''}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                
+                {/* Weekly total */}
+                <div
+                  key={`week-total-${weekIndex}`}
+                  className={`aspect-[4/3] rounded-md p-2 flex items-center justify-center ${
+                    hasWeekData 
+                      ? weekTotal >= 0 
+                        ? 'bg-success/10' 
+                        : 'bg-danger/10'
+                      : 'bg-secondary/20'
+                  }`}
+                >
+                  {hasWeekData && (
+                    <span className={`text-sm font-semibold ${weekTotal >= 0 ? 'text-success' : 'text-danger'}`}>
+                      ${weekTotal.toFixed(2)}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-        
-        {/* Fill remaining cells to complete the grid */}
-        {Array.from({ length: (8 - ((monthData.length % 7) || 7)) % 7 }).map((_, i) => (
-          <div key={`fill-${i}`} className="aspect-[4/3] bg-secondary/30 rounded-md" />
-        ))}
-        
-        {/* Weekly totals column - simplified */}
-        {Array.from({ length: Math.ceil(monthData.length / 7) }).map((_, weekIndex) => {
-          const weekStart = weekIndex * 7;
-          const weekDays = monthData.slice(weekStart, weekStart + 7).filter(Boolean);
-          const weekTotal = weekDays.reduce((sum, d) => sum + (d?.pnl || 0), 0);
-          const hasWeekData = weekDays.some(d => d?.hasData);
-          
-          return (
-            <div
-              key={`week-${weekIndex}`}
-              className={`aspect-[4/3] rounded-md p-2 flex items-center justify-center ${
-                hasWeekData 
-                  ? weekTotal >= 0 
-                    ? 'bg-success/10' 
-                    : 'bg-danger/10'
-                  : 'bg-secondary/20'
-              }`}
-            >
-              {hasWeekData && (
-                <span className={`text-sm font-semibold ${weekTotal >= 0 ? 'text-success' : 'text-danger'}`}>
-                  ${weekTotal.toFixed(2)}
-                </span>
-              )}
-            </div>
-          );
-        })}
+              </>
+            );
+          });
+        })()}
       </div>
     </div>
   );
