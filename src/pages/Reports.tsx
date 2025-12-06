@@ -118,11 +118,26 @@ const Reports = () => {
           ) : (
             <Tabs defaultValue="overview" className="space-y-6">
               <TabsList className="grid w-full grid-cols-5 lg:w-auto">
-                <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-                <TabsTrigger value="time">Por Horário</TabsTrigger>
-                <TabsTrigger value="weekday">Por Dia</TabsTrigger>
-                <TabsTrigger value="holding">Holding Time</TabsTrigger>
-                <TabsTrigger value="trades">Top Trades</TabsTrigger>
+                <TabsTrigger value="overview" className="flex flex-col">
+                  <span>Overview</span>
+                  <span className="text-[10px] text-muted-foreground">Visão Geral</span>
+                </TabsTrigger>
+                <TabsTrigger value="time" className="flex flex-col">
+                  <span>By Time</span>
+                  <span className="text-[10px] text-muted-foreground">Por Horário</span>
+                </TabsTrigger>
+                <TabsTrigger value="weekday" className="flex flex-col">
+                  <span>By Weekday</span>
+                  <span className="text-[10px] text-muted-foreground">Por Dia</span>
+                </TabsTrigger>
+                <TabsTrigger value="holding" className="flex flex-col">
+                  <span>Holding Time</span>
+                  <span className="text-[10px] text-muted-foreground">Tempo de Permanência</span>
+                </TabsTrigger>
+                <TabsTrigger value="trades" className="flex flex-col">
+                  <span>Top Trades</span>
+                  <span className="text-[10px] text-muted-foreground">Melhores Operações</span>
+                </TabsTrigger>
               </TabsList>
 
               {/* Aba: Visão Geral */}
@@ -135,38 +150,50 @@ const Reports = () => {
                   <div className="bg-card border border-border rounded-lg p-6">
                     <div className="flex items-center gap-2 mb-2">
                       <Target className="h-4 w-4 text-primary" />
-                      <h4 className="text-sm text-muted-foreground">Taxa de Acerto</h4>
+                      <div className="flex flex-col">
+                        <h4 className="text-sm text-muted-foreground">Win Rate</h4>
+                        <span className="text-[10px] text-muted-foreground/70">Taxa de Acerto</span>
+                      </div>
                     </div>
                     <p className="text-2xl font-bold text-foreground">{metrics.winRate.toFixed(1)}%</p>
-                    <p className="text-xs text-muted-foreground mt-1">{metrics.totalWins} vitórias / {metrics.totalLosses} perdas</p>
+                    <p className="text-xs text-muted-foreground mt-1">{metrics.totalWins} wins / {metrics.totalLosses} losses</p>
                   </div>
 
                   <div className="bg-card border border-border rounded-lg p-6">
                     <div className="flex items-center gap-2 mb-2">
                       <Award className="h-4 w-4 text-primary" />
-                      <h4 className="text-sm text-muted-foreground">Fator de Lucro</h4>
+                      <div className="flex flex-col">
+                        <h4 className="text-sm text-muted-foreground">Profit Factor</h4>
+                        <span className="text-[10px] text-muted-foreground/70">Fator de Lucro</span>
+                      </div>
                     </div>
                     <p className="text-2xl font-bold text-foreground">
                       {metrics.profitFactor === Infinity ? "∞" : metrics.profitFactor.toFixed(2)}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Relação ganhos/perdas</p>
+                    <p className="text-xs text-muted-foreground mt-1">Wins/Losses ratio</p>
                   </div>
 
                   <div className="bg-card border border-border rounded-lg p-6">
                     <div className="flex items-center gap-2 mb-2">
                       <DollarSign className="h-4 w-4 text-primary" />
-                      <h4 className="text-sm text-muted-foreground">Expectativa</h4>
+                      <div className="flex flex-col">
+                        <h4 className="text-sm text-muted-foreground">Expectancy</h4>
+                        <span className="text-[10px] text-muted-foreground/70">Expectativa</span>
+                      </div>
                     </div>
                     <p className={`text-2xl font-bold ${metrics.expectancy >= 0 ? 'text-success' : 'text-danger'}`}>
                       ${metrics.expectancy.toFixed(2)}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Por operação</p>
+                    <p className="text-xs text-muted-foreground mt-1">Per trade</p>
                   </div>
 
                   <div className="bg-card border border-border rounded-lg p-6">
                     <div className="flex items-center gap-2 mb-2">
                       <Clock className="h-4 w-4 text-primary" />
-                      <h4 className="text-sm text-muted-foreground">Duração Média</h4>
+                      <div className="flex flex-col">
+                        <h4 className="text-sm text-muted-foreground">Avg Duration</h4>
+                        <span className="text-[10px] text-muted-foreground/70">Duração Média</span>
+                      </div>
                     </div>
                     <p className="text-2xl font-bold text-foreground">
                       {additionalMetrics && additionalMetrics.avgDuration >= 60 
@@ -174,7 +201,7 @@ const Reports = () => {
                         : `${additionalMetrics?.avgDuration.toFixed(0)} min`
                       }
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Tempo por operação</p>
+                    <p className="text-xs text-muted-foreground mt-1">Per trade</p>
                   </div>
                 </div>
 
