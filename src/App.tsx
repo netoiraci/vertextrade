@@ -12,6 +12,7 @@ import Calculator from "./pages/Calculator";
 import PropFirm from "./pages/PropFirm";
 import Withdrawals from "./pages/Withdrawals";
 import News from "./pages/News";
+import Mentor from "./pages/Mentor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/prop-firm" element={<PropFirm />} />
           <Route path="/withdrawals" element={<Withdrawals />} />
           <Route path="/news" element={<News />} />
+          <Route path="/mentor" element={<Mentor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,4 +1,4 @@
-import { LayoutDashboard, TrendingUp, BarChart3, FlaskConical, Calculator, Shield, Wallet, Newspaper, Calendar, Plus, ChevronLeft } from "lucide-react";
+import { LayoutDashboard, TrendingUp, BarChart3, FlaskConical, Calculator, Shield, Wallet, Newspaper, Calendar, Plus, ChevronLeft, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ const navItems = [
   { title: "Performance", icon: BarChart3, url: "/reports" },
   { title: "Trade Log", icon: TrendingUp, url: "/journal" },
   { title: "Calendar", icon: Calendar, url: "/calendar" },
+  { title: "Mentor Mode", icon: GraduationCap, url: "/mentor" },
   { title: "Backtest", icon: FlaskConical, url: "/backtest" },
   { title: "Calculadora", icon: Calculator, url: "/calculator" },
   { title: "Gestão Mesa", icon: Shield, url: "/prop-firm" },
