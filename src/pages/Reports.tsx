@@ -123,8 +123,9 @@ const Reports = () => {
           ) : (
             <>
             <TradeFilters filters={filters} onFiltersChange={setFilters} />
+            
             <Tabs defaultValue="overview" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+              <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
                 <TabsTrigger value="overview" className="flex flex-col">
                   <span>Overview</span>
                   <span className="text-[10px] text-muted-foreground">Visão Geral</span>
