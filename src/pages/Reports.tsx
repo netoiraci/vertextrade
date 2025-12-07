@@ -11,22 +11,26 @@ import { HoldingTimeChart } from "@/components/performance/HoldingTimeChart";
 import { RecentTradesWidget } from "@/components/performance/RecentTradesWidget";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, Calendar, Clock, Target, Award, DollarSign, BarChart3, Timer } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { TradeFilters, TradeFiltersState, defaultFilters } from "@/components/TradeFilters";
+import { useTradeFilters } from "@/hooks/useTradeFilters";
 
 const INITIAL_BALANCE = 100000;
 
 const Reports = () => {
   const { trades, isLoading } = useTrades();
-  const metrics = calculateMetrics(trades);
+  const [filters, setFilters] = useState<TradeFiltersState>(defaultFilters);
+  const filteredTrades = useTradeFilters(trades, filters);
+  const metrics = calculateMetrics(filteredTrades);
 
   const additionalMetrics = useMemo(() => {
-    if (trades.length === 0) return null;
+    if (filteredTrades.length === 0) return null;
 
-    const durations = trades.map(t => t.duration);
+    const durations = filteredTrades.map(t => t.duration);
     const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
     
     // IMPORTANTE: Ordenar trades por data de fechamento (mais antigo primeiro)
-    const sortedTrades = [...trades].sort((a, b) => a.closeTime.getTime() - b.closeTime.getTime());
+    const sortedTrades = [...filteredTrades].sort((a, b) => a.closeTime.getTime() - b.closeTime.getTime());
     
     // Calcular sequências consecutivas corretamente
     let maxConsecutiveWins = 0;
@@ -46,8 +50,8 @@ const Reports = () => {
       }
     });
 
-    const totalCommission = trades.reduce((sum, t) => sum + (t.commission || 0), 0);
-    const totalSwap = trades.reduce((sum, t) => sum + (t.swap || 0), 0);
+    const totalCommission = filteredTrades.reduce((sum, t) => sum + (t.commission || 0), 0);
+    const totalSwap = filteredTrades.reduce((sum, t) => sum + (t.swap || 0), 0);
 
     return {
       avgDuration: avgDuration / 60, // converter de minutos para horas
@@ -55,12 +59,12 @@ const Reports = () => {
       consecutiveLosses: maxConsecutiveLosses,
       totalCommission,
       totalSwap,
-      largestLoss: Math.min(...trades.map(t => t.netProfit)),
+      largestLoss: Math.min(...filteredTrades.map(t => t.netProfit)),
     };
-  }, [trades]);
+  }, [filteredTrades]);
 
   const bestTimeRange = useMemo(() => {
-    if (trades.length === 0) return { label: 'N/A', pnl: 0 };
+    if (filteredTrades.length === 0) return { label: 'N/A', pnl: 0 };
     
     const timeRanges = [
       { label: '9-10 AM', start: 9, end: 10 },
@@ -74,27 +78,27 @@ const Reports = () => {
     return timeRanges
       .map(range => ({
         ...range,
-        pnl: trades.filter(t => {
+        pnl: filteredTrades.filter(t => {
           const hour = t.openTime.getHours();
           return hour >= range.start && hour < range.end;
         }).reduce((sum, t) => sum + t.netProfit, 0)
       }))
       .sort((a, b) => b.pnl - a.pnl)[0];
-  }, [trades]);
+  }, [filteredTrades]);
 
   const bestWeekday = useMemo(() => {
-    if (trades.length === 0) return { day: 'N/A', pnl: 0 };
+    if (filteredTrades.length === 0) return { day: 'N/A', pnl: 0 };
     
     const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     
     return days
       .map((day, index) => ({
         day,
-        pnl: trades.filter(t => t.closeTime.getDay() === index)
+        pnl: filteredTrades.filter(t => t.closeTime.getDay() === index)
           .reduce((sum, t) => sum + t.netProfit, 0)
       }))
       .sort((a, b) => b.pnl - a.pnl)[0];
-  }, [trades]);
+  }, [filteredTrades]);
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -102,10 +106,11 @@ const Reports = () => {
       
       <main className="flex-1 overflow-auto">
         <div className="p-8 max-w-7xl mx-auto">
-          <div className="mb-8">
+          <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground mb-2">Análise de Performance</h1>
             <p className="text-muted-foreground">
               Análises detalhadas com insights por horário, dia da semana e tempo de permanência
+              {filteredTrades.length !== trades.length && ` (showing ${filteredTrades.length} of ${trades.length})`}
             </p>
           </div>
 
@@ -116,6 +121,8 @@ const Reports = () => {
               <p className="text-muted-foreground">Ainda não há operações. Importe seu primeiro relatório no Dashboard.</p>
             </div>
           ) : (
+            <>
+            <TradeFilters filters={filters} onFiltersChange={setFilters} />
             <Tabs defaultValue="overview" className="space-y-6">
               <TabsList className="grid w-full grid-cols-5 lg:w-auto">
                 <TabsTrigger value="overview" className="flex flex-col">
@@ -442,6 +449,7 @@ const Reports = () => {
                 </div>
               </TabsContent>
             </Tabs>
+            </>
           )}
         </div>
       </main>
