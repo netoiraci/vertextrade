@@ -6,12 +6,14 @@ import { GraduationCap, Brain, Sparkles, RefreshCw, AlertCircle } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { getHours, getDay } from "date-fns";
 
 const MENTOR_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mentor-analysis`;
 
 const Mentor = () => {
   const { trades, isLoading } = useTrades();
+  const { session } = useAuth();
   const { toast } = useToast();
   const [analysis, setAnalysis] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -88,7 +90,7 @@ const Mentor = () => {
   }, [trades, metrics]);
 
   const runAnalysis = useCallback(async () => {
-    if (!tradeData) return;
+    if (!tradeData || !session?.access_token) return;
 
     setIsAnalyzing(true);
     setError(null);
@@ -99,22 +101,25 @@ const Mentor = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ tradeData }),
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Sessão expirada. Por favor, faça login novamente.");
+        }
         if (response.status === 429) {
-          throw new Error("Rate limit exceeded. Please try again later.");
+          throw new Error("Limite de requisições excedido. Tente novamente mais tarde.");
         }
         if (response.status === 402) {
-          throw new Error("Payment required. Please add credits to your workspace.");
+          throw new Error("Créditos insuficientes. Adicione créditos ao seu workspace.");
         }
-        throw new Error("Failed to get analysis");
+        throw new Error("Falha ao obter análise");
       }
 
-      if (!response.body) throw new Error("No response body");
+      if (!response.body) throw new Error("Sem corpo de resposta");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -155,7 +160,7 @@ const Mentor = () => {
       }
     } catch (err) {
       console.error("Analysis error:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to analyze trades";
+      const errorMessage = err instanceof Error ? err.message : "Falha ao analisar operações";
       setError(errorMessage);
       toast({
         title: "Erro na análise",
@@ -165,7 +170,7 @@ const Mentor = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [tradeData, toast]);
+  }, [tradeData, session, toast]);
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -208,7 +213,7 @@ const Mentor = () => {
                   </div>
                   <Button
                     onClick={runAnalysis}
-                    disabled={isAnalyzing}
+                    disabled={isAnalyzing || !session}
                     className="bg-primary hover:bg-primary/90"
                   >
                     {isAnalyzing ? (

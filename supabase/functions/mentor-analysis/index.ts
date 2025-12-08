@@ -1,27 +1,29 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface TradeData {
-  totalTrades: number;
-  winRate: number;
-  profitFactor: number;
-  totalPnL: number;
-  avgWin: number;
-  avgLoss: number;
-  maxConsecutiveWins: number;
-  maxConsecutiveLosses: number;
-  bestHour: string;
-  worstHour: string;
-  bestDay: string;
-  worstDay: string;
-  avgHoldingTime: number;
-  largestWin: number;
-  largestLoss: number;
-}
+// Input validation schema
+const TradeDataSchema = z.object({
+  totalTrades: z.number().min(0),
+  winRate: z.number().min(0).max(100),
+  profitFactor: z.number().min(0),
+  totalPnL: z.number(),
+  avgWin: z.number().min(0),
+  avgLoss: z.number().min(0),
+  maxConsecutiveWins: z.number().min(0),
+  maxConsecutiveLosses: z.number().min(0),
+  bestHour: z.string(),
+  worstHour: z.string(),
+  bestDay: z.string(),
+  worstDay: z.string(),
+  avgHoldingTime: z.number().min(0),
+  largestWin: z.number().min(0),
+  largestLoss: z.number().min(0),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -29,7 +31,22 @@ serve(async (req) => {
   }
 
   try {
-    const { tradeData } = await req.json() as { tradeData: TradeData };
+    const body = await req.json();
+    
+    // Validate input data
+    const validationResult = TradeDataSchema.safeParse(body.tradeData);
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.errors);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input data", 
+          details: validationResult.error.errors 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const tradeData = validationResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -80,6 +97,8 @@ Formato da resposta:
 - Tempo Médio de Permanência: ${tradeData.avgHoldingTime.toFixed(0)} minutos
 
 Forneça uma análise detalhada com insights acionáveis.`;
+
+    console.log("Processing mentor analysis for user");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
