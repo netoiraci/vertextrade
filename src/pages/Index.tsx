@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { FileUpload } from "@/components/FileUpload";
 import { parseTradeReport, calculateMetrics } from "@/lib/parseTradeReport";
@@ -31,7 +31,8 @@ import { PropFirmGuardian } from "@/components/dashboard/PropFirmGuardian";
 import { AutoInsights } from "@/components/dashboard/AutoInsights";
 import { PnLScatterPlot } from "@/components/dashboard/PnLScatterPlot";
 import { SQNIndicator } from "@/components/dashboard/SQNIndicator";
-import { useMemo } from "react";
+import { TradeFilters, TradeFiltersState, defaultFilters } from "@/components/TradeFilters";
+import { useTradeFilters } from "@/hooks/useTradeFilters";
 
 const INITIAL_BALANCE = 100000;
 const DAILY_LOSS_LIMIT = 5000;
@@ -40,6 +41,9 @@ const MAX_DRAWDOWN_LIMIT = 10000;
 const Index = () => {
   const { trades, saveTrades, deleteAllTrades, isLoading, isSaving, isDeleting } = useTrades();
   const [showUpload, setShowUpload] = useState(false);
+  const [filters, setFilters] = useState<TradeFiltersState>(defaultFilters);
+
+  const filteredTrades = useTradeFilters(trades, filters);
 
   const handleFileUpload = (content: string) => {
     const parsedTrades = parseTradeReport(content);
@@ -49,10 +53,10 @@ const Index = () => {
     }
   };
 
-  const metrics = calculateMetrics(trades);
+  const metrics = calculateMetrics(filteredTrades);
   
   // Current balance usa netPnL (valor líquido após fees)
-  const currentBalance = trades.length > 0 
+  const currentBalance = filteredTrades.length > 0 
     ? INITIAL_BALANCE + metrics.netPnL 
     : INITIAL_BALANCE;
 
@@ -61,18 +65,18 @@ const Index = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    return trades
+    return filteredTrades
       .filter(t => {
         const tradeDate = new Date(t.closeTime);
         tradeDate.setHours(0, 0, 0, 0);
         return tradeDate.getTime() === today.getTime();
       })
       .reduce((sum, t) => sum + t.netProfit, 0);
-  }, [trades]);
+  }, [filteredTrades]);
 
   // Calculate drawdown data
-  const drawdownData = trades.length > 0 ? (() => {
-    const sorted = [...trades].sort((a, b) => a.closeTime.getTime() - b.closeTime.getTime());
+  const drawdownData = filteredTrades.length > 0 ? (() => {
+    const sorted = [...filteredTrades].sort((a, b) => a.closeTime.getTime() - b.closeTime.getTime());
     let cumulative = 0;
     let peak = 0;
     const data: number[] = [];
@@ -87,8 +91,8 @@ const Index = () => {
   const maxDrawdown = drawdownData.length > 0 ? Math.abs(Math.min(...drawdownData)) : 0;
 
   // Find biggest win and loss
-  const biggestWin = trades.length > 0 ? Math.max(...trades.map(t => t.netProfit)) : 0;
-  const biggestLoss = trades.length > 0 ? Math.min(...trades.map(t => t.netProfit)) : 0;
+  const biggestWin = filteredTrades.length > 0 ? Math.max(...filteredTrades.map(t => t.netProfit)) : 0;
+  const biggestLoss = filteredTrades.length > 0 ? Math.min(...filteredTrades.map(t => t.netProfit)) : 0;
 
   // Avg win/loss ratio já calculado em metrics
   const avgWinLossRatio = metrics.avgLoss > 0 ? metrics.avgWin / metrics.avgLoss : 0;
@@ -165,6 +169,9 @@ const Index = () => {
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Filters */}
+              <TradeFilters filters={filters} onFiltersChange={setFilters} />
+
               {/* Prop Firm Guardian - Risk Bar */}
               <PropFirmGuardian
                 todayPnL={todayPnL}
@@ -256,36 +263,36 @@ const Index = () => {
                   tooltip="Expectativa matemática por operação"
                 />
 
-                <SQNIndicator trades={trades} />
+                <SQNIndicator trades={filteredTrades} />
               </div>
 
               {/* Main Content Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Left Column - Charts */}
                 <div className="lg:col-span-2 space-y-4">
-                  <CumulativePnLChart trades={trades} initialBalance={INITIAL_BALANCE} />
+                  <CumulativePnLChart trades={filteredTrades} initialBalance={INITIAL_BALANCE} />
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <MonthlyPnLChart trades={trades} />
-                    <DailyPnLChart trades={trades} />
+                    <MonthlyPnLChart trades={filteredTrades} />
+                    <DailyPnLChart trades={filteredTrades} />
                   </div>
                 </div>
 
                 {/* Right Column - Auto Insights */}
                 <div className="space-y-4">
-                  <AutoInsights trades={trades} />
+                  <AutoInsights trades={filteredTrades} />
                 </div>
               </div>
 
               {/* Analysis Widgets */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <TradingHeatmap trades={trades} />
-                <HoldingTimeDistribution trades={trades} />
+                <TradingHeatmap trades={filteredTrades} />
+                <HoldingTimeDistribution trades={filteredTrades} />
               </div>
 
               {/* Scatter Plot */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <PnLScatterPlot trades={trades} />
+                <PnLScatterPlot trades={filteredTrades} />
               </div>
             </div>
           )}

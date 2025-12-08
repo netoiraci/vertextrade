@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Trade } from "@/lib/parseTradeReport";
 import { TradeFiltersState } from "@/components/TradeFilters";
-import { startOfDay, startOfWeek, startOfMonth, subMonths } from "date-fns";
+import { startOfDay, startOfWeek, startOfMonth, subMonths, isSameDay, getMonth, getYear } from "date-fns";
 
 export function useTradeFilters(trades: Trade[], filters: TradeFiltersState) {
   return useMemo(() => {
@@ -16,8 +16,26 @@ export function useTradeFilters(trades: Trade[], filters: TradeFiltersState) {
       );
     }
 
+    // Specific date filter (takes priority over time period)
+    if (filters.specificDate) {
+      filtered = filtered.filter((trade) => 
+        isSameDay(trade.closeTime, filters.specificDate!)
+      );
+    } 
+    // Month and Year filter (takes priority over time period)
+    else if (filters.selectedMonth !== "all" || filters.selectedYear !== "all") {
+      filtered = filtered.filter((trade) => {
+        const tradeMonth = getMonth(trade.closeTime);
+        const tradeYear = getYear(trade.closeTime);
+        
+        const monthMatch = filters.selectedMonth === "all" || tradeMonth === parseInt(filters.selectedMonth);
+        const yearMatch = filters.selectedYear === "all" || tradeYear === parseInt(filters.selectedYear);
+        
+        return monthMatch && yearMatch;
+      });
+    }
     // Time period filter
-    if (filters.timePeriod !== "all") {
+    else if (filters.timePeriod !== "all") {
       let startDate: Date;
       switch (filters.timePeriod) {
         case "today":
