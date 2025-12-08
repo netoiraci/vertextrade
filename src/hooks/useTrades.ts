@@ -2,17 +2,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Trade } from "@/lib/parseTradeReport";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useTrades() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: trades = [], isLoading } = useQuery({
-    queryKey: ["trades"],
+    queryKey: ["trades", user?.id],
     queryFn: async () => {
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from("trades")
         .select("*")
+        .eq("user_id", user.id)
         .order("close_time", { ascending: false });
 
       if (error) throw error;
@@ -32,10 +37,13 @@ export function useTrades() {
         duration: Number(trade.duration),
       })) as Trade[];
     },
+    enabled: !!user,
   });
 
   const saveTrades = useMutation({
     mutationFn: async (newTrades: Trade[]) => {
+      if (!user) throw new Error("User not authenticated");
+      
       const tradesToInsert = newTrades.map((trade) => ({
         ticket: trade.ticket,
         open_time: trade.openTime.toISOString(),
@@ -51,22 +59,23 @@ export function useTrades() {
         net_profit: trade.netProfit,
         duration: trade.duration,
         is_win: trade.isWin,
+        user_id: user.id,
       }));
 
       const { error } = await supabase.from("trades").insert(tradesToInsert);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["trades"] });
+      queryClient.invalidateQueries({ queryKey: ["trades", user?.id] });
       toast({
-        title: "Success",
-        description: "Trades saved successfully!",
+        title: "Sucesso",
+        description: "Operações salvas com sucesso!",
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to save trades",
+        title: "Erro",
+        description: "Falha ao salvar operações",
         variant: "destructive",
       });
     },
@@ -74,20 +83,25 @@ export function useTrades() {
 
   const deleteAllTrades = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("trades").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (!user) throw new Error("User not authenticated");
+      
+      const { error } = await supabase
+        .from("trades")
+        .delete()
+        .eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["trades"] });
+      queryClient.invalidateQueries({ queryKey: ["trades", user?.id] });
       toast({
-        title: "Success",
-        description: "All trades deleted successfully!",
+        title: "Sucesso",
+        description: "Todas as operações foram deletadas!",
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to delete trades",
+        title: "Erro",
+        description: "Falha ao deletar operações",
         variant: "destructive",
       });
     },
