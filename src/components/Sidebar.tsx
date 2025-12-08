@@ -1,7 +1,8 @@
-import { LayoutDashboard, TrendingUp, BarChart3, FlaskConical, Calculator, Shield, Wallet, Newspaper, Calendar, Plus, ChevronLeft, GraduationCap } from "lucide-react";
+import { LayoutDashboard, TrendingUp, BarChart3, FlaskConical, Calculator, Shield, Wallet, Newspaper, Calendar, Plus, ChevronLeft, GraduationCap, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
@@ -18,6 +19,7 @@ const navItems = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { signOut, user } = useAuth();
 
   return (
     <aside className={`${collapsed ? 'w-16' : 'w-56'} h-screen bg-card border-r border-border flex flex-col sticky top-0 transition-all duration-300`}>
@@ -62,6 +64,21 @@ export function Sidebar() {
           ))}
         </ul>
       </nav>
+
+      <div className="p-2 border-t border-border">
+        {!collapsed && user && (
+          <p className="px-3 py-1 text-xs text-muted-foreground truncate">{user.email}</p>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={signOut}
+          className={`w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 ${collapsed ? 'justify-center px-0' : 'justify-start'}`}
+        >
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          {!collapsed && <span className="ml-2">Sair</span>}
+        </Button>
+      </div>
     </aside>
   );
 }

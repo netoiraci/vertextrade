@@ -32,6 +32,7 @@ export type Database = {
           symbol: string
           ticket: string
           type: string
+          user_id: string | null
         }
         Insert: {
           close_price: number
@@ -50,6 +51,7 @@ export type Database = {
           symbol: string
           ticket: string
           type: string
+          user_id?: string | null
         }
         Update: {
           close_price?: number
@@ -68,6 +70,7 @@ export type Database = {
           symbol?: string
           ticket?: string
           type?: string
+          user_id?: string | null
         }
         Relationships: []
       }
