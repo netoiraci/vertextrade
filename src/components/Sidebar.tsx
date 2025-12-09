@@ -1,4 +1,4 @@
-import { LayoutDashboard, TrendingUp, BarChart3, FlaskConical, Calculator, Shield, Wallet, Newspaper, Calendar, Plus, ChevronLeft, GraduationCap, LogOut } from "lucide-react";
+import { LayoutDashboard, TrendingUp, BarChart3, FlaskConical, Calculator, Shield, Wallet, Newspaper, Calendar, Plus, ChevronLeft, GraduationCap, LogOut, UserCircle } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ const navItems = [
   { title: "Gestão Mesa", icon: Shield, url: "/prop-firm" },
   { title: "Saques", icon: Wallet, url: "/withdrawals" },
   { title: "Notícias", icon: Newspaper, url: "/news" },
+  { title: "Perfil", icon: UserCircle, url: "/profile" },
 ];
 
 export function Sidebar() {
