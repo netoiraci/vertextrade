@@ -15,6 +15,7 @@ import PropFirm from "./pages/PropFirm";
 import Withdrawals from "./pages/Withdrawals";
 import News from "./pages/News";
 import Mentor from "./pages/Mentor";
+import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/withdrawals" element={<ProtectedRoute><Withdrawals /></ProtectedRoute>} />
             <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
             <Route path="/mentor" element={<ProtectedRoute><Mentor /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
