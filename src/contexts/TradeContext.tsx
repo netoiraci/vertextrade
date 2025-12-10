@@ -1,18 +1,13 @@
-import { createContext, useContext, useState, ReactNode, useMemo } from "react";
+import { createContext, useContext, ReactNode, useMemo } from "react";
 import { Trade, calculateMetrics } from "@/lib/parseTradeReport";
 import { useTrades } from "@/hooks/useTrades";
-
-interface TradeSettings {
-  initialBalance: number;
-  dailyLossLimit: number;
-  maxDrawdownLimit: number;
-}
+import { useUserSettings, UserSettings } from "@/hooks/useUserSettings";
 
 interface TradeContextType {
   trades: Trade[];
   metrics: ReturnType<typeof calculateMetrics>;
-  settings: TradeSettings;
-  updateSettings: (newSettings: Partial<TradeSettings>) => void;
+  settings: UserSettings;
+  updateSettings: (newSettings: Partial<UserSettings>) => void;
   isLoading: boolean;
   saveTrades: (trades: Trade[]) => void;
   deleteAllTrades: () => void;
@@ -21,19 +16,14 @@ interface TradeContextType {
   currentBalance: number;
   todayPnL: number;
   maxDrawdown: number;
+  isSettingsLoading: boolean;
 }
-
-const defaultSettings: TradeSettings = {
-  initialBalance: 100000,
-  dailyLossLimit: 5000,
-  maxDrawdownLimit: 10000,
-};
 
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
 
 export function TradeProvider({ children }: { children: ReactNode }) {
   const { trades, saveTrades, deleteAllTrades, isLoading, isSaving, isDeleting } = useTrades();
-  const [settings, setSettings] = useState<TradeSettings>(defaultSettings);
+  const { settings, saveSettings, isLoading: isSettingsLoading } = useUserSettings();
 
   const metrics = useMemo(() => calculateMetrics(trades), [trades]);
 
@@ -72,8 +62,8 @@ export function TradeProvider({ children }: { children: ReactNode }) {
     return Math.abs(maxDD);
   }, [trades]);
 
-  const updateSettings = (newSettings: Partial<TradeSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+  const updateSettings = (newSettings: Partial<UserSettings>) => {
+    saveSettings(newSettings);
   };
 
   return (
@@ -91,6 +81,7 @@ export function TradeProvider({ children }: { children: ReactNode }) {
         currentBalance,
         todayPnL,
         maxDrawdown,
+        isSettingsLoading,
       }}
     >
       {children}

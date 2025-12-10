@@ -2,14 +2,21 @@ import { Sidebar } from "@/components/Sidebar";
 import { useTrades } from "@/hooks/useTrades";
 import { calculateMetrics } from "@/lib/parseTradeReport";
 import { useState, useMemo, useCallback } from "react";
-import { GraduationCap, Brain, Sparkles, RefreshCw, AlertCircle } from "lucide-react";
+import { GraduationCap, Brain, Sparkles, RefreshCw, AlertCircle, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { getHours, getDay } from "date-fns";
+import { getHours, getDay, format, subDays, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
 
 const MENTOR_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mentor-analysis`;
+
+type PeriodFilter = "all" | "7d" | "30d" | "this_month" | "last_month" | "custom";
 
 const Mentor = () => {
   const { trades, isLoading } = useTrades();
@@ -18,13 +25,74 @@ const Mentor = () => {
   const [analysis, setAnalysis] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
 
-  const metrics = calculateMetrics(trades);
+  // Filter trades by period
+  const filteredTrades = useMemo(() => {
+    if (trades.length === 0) return [];
+    
+    const now = new Date();
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
+
+    switch (periodFilter) {
+      case "7d":
+        startDate = subDays(now, 7);
+        endDate = now;
+        break;
+      case "30d":
+        startDate = subDays(now, 30);
+        endDate = now;
+        break;
+      case "this_month":
+        startDate = startOfMonth(now);
+        endDate = endOfMonth(now);
+        break;
+      case "last_month":
+        const lastMonth = subMonths(now, 1);
+        startDate = startOfMonth(lastMonth);
+        endDate = endOfMonth(lastMonth);
+        break;
+      case "custom":
+        if (customDateRange?.from) {
+          startDate = customDateRange.from;
+          endDate = customDateRange.to || customDateRange.from;
+        }
+        break;
+      case "all":
+      default:
+        return trades;
+    }
+
+    if (!startDate || !endDate) return trades;
+
+    return trades.filter(trade => 
+      isWithinInterval(trade.closeTime, { start: startDate!, end: endDate! })
+    );
+  }, [trades, periodFilter, customDateRange]);
+
+  const metrics = calculateMetrics(filteredTrades);
+
+  const periodLabel = useMemo(() => {
+    switch (periodFilter) {
+      case "7d": return "Últimos 7 dias";
+      case "30d": return "Últimos 30 dias";
+      case "this_month": return "Este mês";
+      case "last_month": return "Mês passado";
+      case "custom": 
+        if (customDateRange?.from && customDateRange?.to) {
+          return `${format(customDateRange.from, "dd/MM/yy")} - ${format(customDateRange.to, "dd/MM/yy")}`;
+        }
+        return "Período personalizado";
+      default: return "Todo o período";
+    }
+  }, [periodFilter, customDateRange]);
 
   const tradeData = useMemo(() => {
-    if (trades.length === 0) return null;
+    if (filteredTrades.length === 0) return null;
 
-    const sortedTrades = [...trades].sort((a, b) => a.closeTime.getTime() - b.closeTime.getTime());
+    const sortedTrades = [...filteredTrades].sort((a, b) => a.closeTime.getTime() - b.closeTime.getTime());
     
     // Calculate consecutive wins/losses
     let maxConsecutiveWins = 0;
@@ -46,7 +114,7 @@ const Mentor = () => {
 
     // Calculate best/worst hours
     const hourlyPnL: Record<number, number> = {};
-    trades.forEach((trade) => {
+    filteredTrades.forEach((trade) => {
       const hour = getHours(trade.openTime);
       hourlyPnL[hour] = (hourlyPnL[hour] || 0) + trade.netProfit;
     });
@@ -58,7 +126,7 @@ const Mentor = () => {
     // Calculate best/worst days
     const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     const dailyPnL: Record<number, number> = {};
-    trades.forEach((trade) => {
+    filteredTrades.forEach((trade) => {
       const day = getDay(trade.closeTime);
       dailyPnL[day] = (dailyPnL[day] || 0) + trade.netProfit;
     });
@@ -67,8 +135,8 @@ const Mentor = () => {
     const bestDayEntry = dayEntries.sort((a, b) => Number(b[1]) - Number(a[1]))[0];
     const worstDayEntry = dayEntries.sort((a, b) => Number(a[1]) - Number(b[1]))[0];
 
-    const avgHoldingTime = trades.reduce((sum, t) => sum + t.duration, 0) / trades.length;
-    const largestLoss = Math.min(...trades.map(t => t.netProfit));
+    const avgHoldingTime = filteredTrades.reduce((sum, t) => sum + t.duration, 0) / filteredTrades.length;
+    const largestLoss = Math.min(...filteredTrades.map(t => t.netProfit));
 
     return {
       totalTrades: metrics.totalTrades,
@@ -86,8 +154,9 @@ const Mentor = () => {
       avgHoldingTime,
       largestWin: metrics.largestWin,
       largestLoss: Math.abs(largestLoss),
+      periodAnalyzed: periodLabel,
     };
-  }, [trades, metrics]);
+  }, [filteredTrades, metrics, periodLabel]);
 
   const runAnalysis = useCallback(async () => {
     if (!tradeData || !session?.access_token) return;
@@ -204,6 +273,66 @@ const Mentor = () => {
             </Card>
           ) : (
             <div className="space-y-6">
+              {/* Period Filter */}
+              <Card className="p-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5 text-primary" />
+                    <span className="font-medium text-foreground">Período de Análise:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Selecione o período" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todo o período</SelectItem>
+                        <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                        <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                        <SelectItem value="this_month">Este mês</SelectItem>
+                        <SelectItem value="last_month">Mês passado</SelectItem>
+                        <SelectItem value="custom">Personalizado</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {periodFilter === "custom" && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="min-w-[200px] justify-start">
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            {customDateRange?.from ? (
+                              customDateRange.to ? (
+                                `${format(customDateRange.from, "dd/MM/yy")} - ${format(customDateRange.to, "dd/MM/yy")}`
+                              ) : (
+                                format(customDateRange.from, "dd/MM/yy")
+                              )
+                            ) : (
+                              "Selecione as datas"
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={customDateRange?.from}
+                            selected={customDateRange}
+                            onSelect={setCustomDateRange}
+                            numberOfMonths={2}
+                            locale={ptBR}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
+                </div>
+                {filteredTrades.length !== trades.length && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Mostrando {filteredTrades.length} de {trades.length} operações ({periodLabel})
+                  </p>
+                )}
+              </Card>
+
               {/* Stats Summary */}
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -213,7 +342,7 @@ const Mentor = () => {
                   </div>
                   <Button
                     onClick={runAnalysis}
-                    disabled={isAnalyzing || !session}
+                    disabled={isAnalyzing || !session || filteredTrades.length === 0}
                     className="bg-primary hover:bg-primary/90"
                   >
                     {isAnalyzing ? (
@@ -230,28 +359,34 @@ const Mentor = () => {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-secondary/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Total Trades</p>
-                    <p className="text-xl font-bold text-foreground">{tradeData?.totalTrades}</p>
+                {filteredTrades.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">
+                    Nenhuma operação encontrada no período selecionado.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-secondary/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Total Trades</p>
+                      <p className="text-xl font-bold text-foreground">{tradeData?.totalTrades}</p>
+                    </div>
+                    <div className="bg-secondary/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Win Rate</p>
+                      <p className="text-xl font-bold text-foreground">{tradeData?.winRate.toFixed(1)}%</p>
+                    </div>
+                    <div className="bg-secondary/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Profit Factor</p>
+                      <p className="text-xl font-bold text-foreground">
+                        {tradeData?.profitFactor === 999 ? "∞" : tradeData?.profitFactor.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="bg-secondary/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Net P&L</p>
+                      <p className={`text-xl font-bold ${(tradeData?.totalPnL || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
+                        ${tradeData?.totalPnL.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-secondary/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Win Rate</p>
-                    <p className="text-xl font-bold text-foreground">{tradeData?.winRate.toFixed(1)}%</p>
-                  </div>
-                  <div className="bg-secondary/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Profit Factor</p>
-                    <p className="text-xl font-bold text-foreground">
-                      {tradeData?.profitFactor === 999 ? "∞" : tradeData?.profitFactor.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="bg-secondary/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Net P&L</p>
-                    <p className={`text-xl font-bold ${(tradeData?.totalPnL || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
-                      ${tradeData?.totalPnL.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
+                )}
               </Card>
 
               {/* Error State */}
@@ -273,6 +408,7 @@ const Mentor = () => {
                   <div className="flex items-center gap-2 mb-4">
                     <Brain className="h-5 w-5 text-primary" />
                     <h2 className="text-lg font-semibold text-foreground">Análise do Mentor AI</h2>
+                    <span className="text-xs text-muted-foreground ml-auto">({periodLabel})</span>
                   </div>
                   <div className="prose prose-invert prose-sm max-w-none">
                     <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
@@ -283,14 +419,14 @@ const Mentor = () => {
               )}
 
               {/* Initial State */}
-              {!analysis && !isAnalyzing && !error && (
+              {!analysis && !isAnalyzing && !error && filteredTrades.length > 0 && (
                 <Card className="p-8 text-center border-dashed">
                   <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">
                     Pronto para Análise
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    Clique em "Gerar Análise AI" para receber insights personalizados sobre seu trading.
+                    Selecione o período desejado e clique em "Gerar Análise AI" para receber insights personalizados.
                   </p>
                 </Card>
               )}
