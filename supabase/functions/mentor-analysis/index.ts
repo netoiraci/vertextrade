@@ -23,6 +23,7 @@ const TradeDataSchema = z.object({
   avgHoldingTime: z.number().min(0),
   largestWin: z.number().min(0),
   largestLoss: z.number().min(0),
+  periodAnalyzed: z.string().optional(),
 });
 
 serve(async (req) => {
@@ -71,7 +72,12 @@ Formato da resposta:
 - Inclua números e porcentagens dos dados
 - Termine com uma mensagem motivacional`;
 
+    const periodInfo = tradeData.periodAnalyzed 
+      ? `\n📅 **Período Analisado:** ${tradeData.periodAnalyzed}` 
+      : "";
+
     const userPrompt = `Analise estes dados de trading e forneça insights personalizados:
+${periodInfo}
 
 📊 **Estatísticas Gerais:**
 - Total de Operações: ${tradeData.totalTrades}
@@ -95,6 +101,8 @@ Formato da resposta:
 - Melhor Dia: ${tradeData.bestDay}
 - Pior Dia: ${tradeData.worstDay}
 - Tempo Médio de Permanência: ${tradeData.avgHoldingTime.toFixed(0)} minutos
+
+${tradeData.periodAnalyzed ? `Considere que esta análise é específica para o período "${tradeData.periodAnalyzed}". Mencione isso na sua análise e dê insights relevantes para este período específico.` : ""}
 
 Forneça uma análise detalhada com insights acionáveis.`;
 

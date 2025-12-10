@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { Sidebar } from "@/components/Sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTradeContext } from "@/contexts/TradeContext";
-import { useToast } from "@/hooks/use-toast";
-import { User, Settings, Lock, DollarSign, TrendingDown, AlertTriangle, Save, Eye, EyeOff } from "lucide-react";
+import { useUserSettings } from "@/hooks/useUserSettings";
+import { User, Settings, Lock, DollarSign, TrendingDown, AlertTriangle, Save, Eye, EyeOff, Sun, Moon, Monitor } from "lucide-react";
 import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
 
 const passwordSchema = z.object({
   newPassword: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
@@ -20,7 +21,8 @@ const passwordSchema = z.object({
 
 export default function Profile() {
   const { user, updatePassword } = useAuth();
-  const { settings, updateSettings } = useTradeContext();
+  const { settings, saveSettings, isSaving, isLoading } = useUserSettings();
+  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   
   // Password state
@@ -31,10 +33,25 @@ export default function Profile() {
   const [passwordErrors, setPasswordErrors] = useState<{ newPassword?: string; confirmPassword?: string }>({});
   
   // Trading settings state
-  const [initialBalance, setInitialBalance] = useState(settings.initialBalance.toString());
-  const [dailyLossLimit, setDailyLossLimit] = useState(settings.dailyLossLimit.toString());
-  const [maxDrawdownLimit, setMaxDrawdownLimit] = useState(settings.maxDrawdownLimit.toString());
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [initialBalance, setInitialBalance] = useState("");
+  const [dailyLossLimit, setDailyLossLimit] = useState("");
+  const [maxDrawdownLimit, setMaxDrawdownLimit] = useState("");
+
+  // Update local state when settings load from DB
+  useEffect(() => {
+    if (!isLoading) {
+      setInitialBalance(settings.initialBalance.toString());
+      setDailyLossLimit(settings.dailyLossLimit.toString());
+      setMaxDrawdownLimit(settings.maxDrawdownLimit.toString());
+    }
+  }, [settings, isLoading]);
+
+  // Sync theme with saved settings
+  useEffect(() => {
+    if (!isLoading && settings.theme) {
+      setTheme(settings.theme);
+    }
+  }, [settings.theme, isLoading, setTheme]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,26 +89,32 @@ export default function Profile() {
   };
 
   const handleSaveSettings = () => {
-    setIsSavingSettings(true);
-    
     const newInitialBalance = parseFloat(initialBalance) || 100000;
     const newDailyLossLimit = parseFloat(dailyLossLimit) || 5000;
     const newMaxDrawdownLimit = parseFloat(maxDrawdownLimit) || 10000;
     
-    updateSettings({
+    saveSettings({
       initialBalance: newInitialBalance,
       dailyLossLimit: newDailyLossLimit,
       maxDrawdownLimit: newMaxDrawdownLimit,
     });
-    
-    setTimeout(() => {
-      setIsSavingSettings(false);
-      toast({
-        title: "Sucesso",
-        description: "Preferências de trading salvas!",
-      });
-    }, 300);
   };
+
+  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
+    setTheme(newTheme);
+    saveSettings({ theme: newTheme });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen bg-background">
+        <Sidebar />
+        <main className="flex-1 p-6 flex items-center justify-center">
+          <p className="text-muted-foreground">Carregando...</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -128,6 +151,45 @@ export default function Profile() {
                   disabled
                   className="bg-secondary/50 text-foreground font-mono text-xs"
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Theme Settings */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Sun className="h-5 w-5 text-primary" />
+                Aparência
+              </CardTitle>
+              <CardDescription>Escolha o tema de sua preferência</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-3">
+                <Button
+                  variant={theme === "light" ? "default" : "outline"}
+                  onClick={() => handleThemeChange("light")}
+                  className="flex-1"
+                >
+                  <Sun className="h-4 w-4 mr-2" />
+                  Claro
+                </Button>
+                <Button
+                  variant={theme === "dark" ? "default" : "outline"}
+                  onClick={() => handleThemeChange("dark")}
+                  className="flex-1"
+                >
+                  <Moon className="h-4 w-4 mr-2" />
+                  Escuro
+                </Button>
+                <Button
+                  variant={theme === "system" ? "default" : "outline"}
+                  onClick={() => handleThemeChange("system")}
+                  className="flex-1"
+                >
+                  <Monitor className="h-4 w-4 mr-2" />
+                  Sistema
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -182,11 +244,11 @@ export default function Profile() {
               </div>
               <Button 
                 onClick={handleSaveSettings} 
-                disabled={isSavingSettings}
+                disabled={isSaving}
                 className="w-full sm:w-auto"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {isSavingSettings ? "Salvando..." : "Salvar Preferências"}
+                {isSaving ? "Salvando..." : "Salvar Preferências"}
               </Button>
             </CardContent>
           </Card>
