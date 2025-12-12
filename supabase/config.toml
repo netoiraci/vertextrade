@@ -1,1 +1,10 @@
 project_id = "qpjfbcmipmlsyvjvdxat"
+
+[functions.mentor-analysis]
+verify_jwt = true
+
+[functions.oracle-chat]
+verify_jwt = true
+
+[functions.trade-reflection]
+verify_jwt = true
