@@ -6,6 +6,7 @@ import {
   GraduationCap, Brain, Sparkles, RefreshCw, AlertCircle, CalendarDays, 
   Send, Lightbulb, TrendingUp 
 } from "lucide-react";
+import { MarkdownText } from "@/components/MarkdownText";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -463,9 +464,7 @@ const Mentor = () => {
                   {oracleResponse && (
                     <div className="mt-6 p-4 rounded-lg bg-secondary/30 border border-border/50">
                       <div className="prose prose-invert prose-sm max-w-none">
-                        <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
-                          {oracleResponse}
-                        </div>
+                        <MarkdownText content={oracleResponse} className="text-foreground/90" />
                       </div>
                     </div>
                   )}
@@ -543,9 +542,7 @@ const Mentor = () => {
                   {reflectionResponse && (
                     <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
                       <div className="prose prose-invert prose-sm max-w-none">
-                        <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
-                          {reflectionResponse}
-                        </div>
+                        <MarkdownText content={reflectionResponse} className="text-foreground/90" />
                       </div>
                     </div>
                   )}
@@ -699,9 +696,7 @@ const Mentor = () => {
                       <span className="text-xs text-muted-foreground ml-auto">({periodLabel})</span>
                     </div>
                     <div className="prose prose-invert prose-sm max-w-none">
-                      <div className="whitespace-pre-wrap text-foreground/90 leading-relaxed">
-                        {analysis}
-                      </div>
+                      <MarkdownText content={analysis} className="text-foreground/90" />
                     </div>
                   </Card>
                 )}
