@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, TrendingUp, ArrowLeft } from "lucide-react";
 import { z } from "zod";
+import GridGlowBackground from "@/components/GridGlowBackground";
 
 const authSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -163,9 +164,9 @@ export default function Auth() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <GridGlowBackground>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      </GridGlowBackground>
     );
   }
 
@@ -188,7 +189,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <GridGlowBackground>
       <Card className="w-full max-w-md border-border/50">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -339,6 +340,6 @@ export default function Auth() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </GridGlowBackground>
   );
 }
