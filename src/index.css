@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* VertexTrade Trading Theme - Dark Mode Only */
+    /* VertexTrade Trading Theme - Dark Mode */
     --background: 0 0% 4%;
     --foreground: 210 17% 91%;
 
@@ -55,6 +55,61 @@ All colors MUST be HSL.
     --sidebar-accent: 0 0% 11%;
     --sidebar-accent-foreground: 210 17% 91%;
     --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 160 84% 39%;
+
+    /* Custom gradients */
+    --gradient-profit: linear-gradient(135deg, hsl(160 84% 39%), hsl(160 84% 50%));
+    --gradient-loss: linear-gradient(135deg, hsl(351 95% 61%), hsl(351 95% 71%));
+    --glow-profit: 0 0 20px hsl(160 84% 39% / 0.3);
+    --glow-loss: 0 0 20px hsl(351 95% 61% / 0.3);
+  }
+
+  .light {
+    /* VertexTrade Trading Theme - Light Mode */
+    --background: 0 0% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 0%;
+
+    --danger: 351 95% 61%;
+    --danger-foreground: 0 0% 100%;
+
+    --destructive: 351 95% 61%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 160 84% 39%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 160 84% 39%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
     --sidebar-ring: 160 84% 39%;
 
     /* Custom gradients */
