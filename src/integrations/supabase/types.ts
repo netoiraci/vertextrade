@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      trader_archetype: {
+        Row: {
+          archetype_description: string
+          archetype_image_url: string | null
+          archetype_name: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archetype_description: string
+          archetype_image_url?: string | null
+          archetype_name: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archetype_description?: string
+          archetype_image_url?: string | null
+          archetype_name?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trades: {
         Row: {
           close_price: number

@@ -1,9 +1,9 @@
-import { LayoutDashboard, TrendingUp, BarChart3, FlaskConical, Calculator, Shield, Wallet, Newspaper, Calendar, Plus, ChevronLeft, GraduationCap, LogOut, UserCircle } from "lucide-react";
+import { LayoutDashboard, TrendingUp, BarChart3, FlaskConical, Calculator, Shield, Wallet, Newspaper, Calendar, ChevronLeft, GraduationCap, LogOut, UserCircle } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-
+import { AddTradeDialog } from "@/components/AddTradeDialog";
 const navItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
   { title: "Performance", icon: BarChart3, url: "/reports" },
@@ -42,10 +42,7 @@ export function Sidebar() {
 
       {!collapsed && (
         <div className="p-3">
-          <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Trade
-          </Button>
+          <AddTradeDialog />
         </div>
       )}
       
