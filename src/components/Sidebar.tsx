@@ -27,7 +27,7 @@ export function Sidebar() {
       <div className="p-4 border-b border-border flex items-center justify-between">
         {!collapsed && (
           <div>
-            <h1 className="text-xl font-bold text-primary">Chivunk</h1>
+            <h1 className="text-xl font-bold"><span className="text-primary">Vertex</span><span className="text-foreground">Trade</span></h1>
           </div>
         )}
         <Button 

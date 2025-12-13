@@ -190,11 +190,18 @@ export default function Auth() {
 
   return (
     <GridGlowBackground>
-      <Card className="w-full max-w-md border-border/50">
+      <Card className="w-full max-w-md border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/20">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-full bg-primary/10">
-              <TrendingUp className="h-8 w-8 text-primary" />
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <div className="w-10 h-10 bg-primary rotate-45 rounded-sm" />
+                <div className="absolute inset-0 w-10 h-10 bg-primary/50 rotate-45 rounded-sm translate-x-1 -translate-y-1" />
+              </div>
+              <span className="text-2xl font-bold tracking-tight">
+                <span className="text-primary">Vertex</span>
+                <span className="text-foreground">Trade</span>
+              </span>
             </div>
           </div>
           <CardTitle className="text-2xl">{getTitle()}</CardTitle>
