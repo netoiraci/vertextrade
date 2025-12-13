@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.trade-reflection]
 verify_jwt = true
+
+[functions.trader-archetype]
+verify_jwt = true

@@ -19,6 +19,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { TraderArchetype } from "@/components/TraderArchetype";
 
 const MENTOR_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mentor-analysis`;
 const ORACLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/oracle-chat`;
@@ -558,6 +559,9 @@ const Mentor = () => {
 
               {/* Insights Tab (Original Analysis) */}
               <TabsContent value="insights" className="space-y-6">
+                {/* Trader Archetype Section */}
+                <TraderArchetype tradeData={tradeData} />
+
                 {/* Period Filter */}
                 <Card className="p-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
