@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { FileUpload } from "@/components/FileUpload";
 import { parseTradeReport, calculateMetrics } from "@/lib/parseTradeReport";
 import { useTrades } from "@/hooks/useTrades";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,19 +35,16 @@ import { SQNIndicator } from "@/components/dashboard/SQNIndicator";
 import { TradeFilters, TradeFiltersState, defaultFilters } from "@/components/TradeFilters";
 import { useTradeFilters } from "@/hooks/useTradeFilters";
 
-const INITIAL_BALANCE = 100000;
-const DAILY_LOSS_LIMIT = 5000;
-const MAX_DRAWDOWN_LIMIT = 10000;
-
 const Index = () => {
   const { trades, saveTrades, deleteAllTrades, isLoading, isSaving, isDeleting } = useTrades();
+  const { settings, isLoading: isSettingsLoading } = useUserSettings();
   const [showUpload, setShowUpload] = useState(false);
   const [filters, setFilters] = useState<TradeFiltersState>(defaultFilters);
 
   const filteredTrades = useTradeFilters(trades, filters);
 
   const handleFileUpload = (content: string) => {
-    const parsedTrades = parseTradeReport(content);
+    const parsedTrades = parseTradeReport(content, settings.brokerUtcOffset);
     if (parsedTrades.length > 0) {
       saveTrades(parsedTrades);
       setShowUpload(false);
@@ -57,8 +55,8 @@ const Index = () => {
   
   // Current balance usa netPnL (valor líquido após fees)
   const currentBalance = filteredTrades.length > 0 
-    ? INITIAL_BALANCE + metrics.netPnL 
-    : INITIAL_BALANCE;
+    ? settings.initialBalance + metrics.netPnL 
+    : settings.initialBalance;
 
   // Today's P&L
   const todayPnL = useMemo(() => {
@@ -97,7 +95,7 @@ const Index = () => {
   // Avg win/loss ratio já calculado em metrics
   const avgWinLossRatio = metrics.avgLoss > 0 ? metrics.avgWin / metrics.avgLoss : 0;
 
-  if (isLoading) {
+  if (isLoading || isSettingsLoading) {
     return (
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar />
@@ -175,11 +173,11 @@ const Index = () => {
               {/* Prop Firm Guardian - Risk Bar */}
               <PropFirmGuardian
                 todayPnL={todayPnL}
-                dailyLossLimit={DAILY_LOSS_LIMIT}
+                dailyLossLimit={settings.dailyLossLimit}
                 maxDrawdown={maxDrawdown}
-                maxDrawdownLimit={MAX_DRAWDOWN_LIMIT}
+                maxDrawdownLimit={settings.maxDrawdownLimit}
                 currentBalance={currentBalance}
-                initialBalance={INITIAL_BALANCE}
+                initialBalance={settings.initialBalance}
               />
 
               {/* Top Stats Row */}
@@ -270,7 +268,7 @@ const Index = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Left Column - Charts */}
                 <div className="lg:col-span-2 space-y-4">
-                  <CumulativePnLChart trades={filteredTrades} initialBalance={INITIAL_BALANCE} />
+                  <CumulativePnLChart trades={filteredTrades} initialBalance={settings.initialBalance} />
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <MonthlyPnLChart trades={filteredTrades} />

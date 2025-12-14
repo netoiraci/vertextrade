@@ -106,6 +106,7 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          broker_utc_offset: number
           created_at: string
           daily_loss_limit: number
           id: string
@@ -116,6 +117,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          broker_utc_offset?: number
           created_at?: string
           daily_loss_limit?: number
           id?: string
@@ -126,6 +128,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          broker_utc_offset?: number
           created_at?: string
           daily_loss_limit?: number
           id?: string

@@ -15,7 +15,7 @@ export interface Trade {
   isWin: boolean;
 }
 
-export function parseTradeReport(fileContent: string): Trade[] {
+export function parseTradeReport(fileContent: string, brokerUtcOffset: number = 3): Trade[] {
   const lines = fileContent.split('\n');
   const trades: Trade[] = [];
   
@@ -47,18 +47,22 @@ export function parseTradeReport(fileContent: string): Trade[] {
     
     try {
       const ticket = parts[0];
-      const openTime = parseDateTime(parts[1]);
+      const openTimeRaw = parseDateTime(parts[1]);
       const tradingType = type.includes('buy') ? 'buy' : 'sell';
       const size = parseFloat(parts[3]);
       const symbol = parts[4].toLowerCase();
       const openPrice = parseFloat(parts[5]);
       // Parts 6 and 7 are S/L and T/P - skip them
-      const closeTime = parseDateTime(parts[8]);
+      const closeTimeRaw = parseDateTime(parts[8]);
       const closePrice = parseFloat(parts[9]);
       const commission = parseFloat(parts[10]) || 0;
       // Part 11 is Taxes - skip it
       const swap = parseFloat(parts[12]) || 0;
       const profit = parseFloat(parts[13]) || 0;
+      
+      // Apply broker UTC offset
+      const openTime = applyUtcOffset(openTimeRaw, brokerUtcOffset);
+      const closeTime = applyUtcOffset(closeTimeRaw, brokerUtcOffset);
       
       const netProfit = profit + commission + swap;
       const duration = (closeTime.getTime() - openTime.getTime()) / (1000 * 60); // in minutes
@@ -96,6 +100,12 @@ function parseDateTime(dateStr: string): Date {
   const [hours, minutes] = timePart.split(':').map(Number);
   
   return new Date(year, month - 1, day, hours, minutes);
+}
+
+function applyUtcOffset(date: Date, offsetHours: number): Date {
+  const newDate = new Date(date.getTime());
+  newDate.setHours(newDate.getHours() + offsetHours);
+  return newDate;
 }
 
 export function calculateMetrics(trades: Trade[]) {
