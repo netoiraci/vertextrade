@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { AddTradeDialog } from "@/components/AddTradeDialog";
+import { AccountSelector } from "@/components/AccountSelector";
+
 const navItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
   { title: "Performance", icon: BarChart3, url: "/reports" },
@@ -41,7 +43,8 @@ export function Sidebar() {
       </div>
 
       {!collapsed && (
-        <div className="p-3">
+        <div className="p-3 space-y-2">
+          <AccountSelector />
           <AddTradeDialog />
         </div>
       )}

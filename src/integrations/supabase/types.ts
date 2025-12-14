@@ -14,8 +14,85 @@ export type Database = {
   }
   public: {
     Tables: {
+      archetype_history: {
+        Row: {
+          account_id: string | null
+          archetype_description: string
+          archetype_image_url: string | null
+          archetype_name: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          archetype_description: string
+          archetype_image_url?: string | null
+          archetype_name: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          archetype_description?: string
+          archetype_image_url?: string | null
+          archetype_name?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archetype_history_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "trading_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_analyses: {
+        Row: {
+          account_id: string | null
+          analysis_content: string
+          analysis_type: string
+          created_at: string
+          id: string
+          period_filter: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          analysis_content: string
+          analysis_type?: string
+          created_at?: string
+          id?: string
+          period_filter?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          analysis_content?: string
+          analysis_type?: string
+          created_at?: string
+          id?: string
+          period_filter?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_analyses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "trading_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trader_archetype: {
         Row: {
+          account_id: string | null
           archetype_description: string
           archetype_image_url: string | null
           archetype_name: string
@@ -25,6 +102,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           archetype_description: string
           archetype_image_url?: string | null
           archetype_name: string
@@ -34,6 +112,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           archetype_description?: string
           archetype_image_url?: string | null
           archetype_name?: string
@@ -42,10 +121,19 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trader_archetype_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "trading_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trades: {
         Row: {
+          account_id: string | null
           close_price: number
           close_time: string
           commission: number | null
@@ -65,6 +153,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          account_id?: string | null
           close_price: number
           close_time: string
           commission?: number | null
@@ -84,6 +173,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          account_id?: string | null
           close_price?: number
           close_time?: string
           commission?: number | null
@@ -101,6 +191,53 @@ export type Database = {
           ticket?: string
           type?: string
           user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trades_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "trading_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trading_accounts: {
+        Row: {
+          broker_utc_offset: number
+          created_at: string
+          daily_loss_limit: number
+          id: string
+          initial_balance: number
+          is_active: boolean
+          max_drawdown_limit: number
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          broker_utc_offset?: number
+          created_at?: string
+          daily_loss_limit?: number
+          id?: string
+          initial_balance?: number
+          is_active?: boolean
+          max_drawdown_limit?: number
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          broker_utc_offset?: number
+          created_at?: string
+          daily_loss_limit?: number
+          id?: string
+          initial_balance?: number
+          is_active?: boolean
+          max_drawdown_limit?: number
+          name?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
