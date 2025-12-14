@@ -7,9 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { User, Settings, Lock, DollarSign, TrendingDown, AlertTriangle, Save, Eye, EyeOff, Sun, Moon, Monitor } from "lucide-react";
+import { User, Settings, Lock, DollarSign, TrendingDown, AlertTriangle, Save, Eye, EyeOff, Sun, Moon, Monitor, Clock } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const passwordSchema = z.object({
   newPassword: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
@@ -36,6 +43,7 @@ export default function Profile() {
   const [initialBalance, setInitialBalance] = useState("");
   const [dailyLossLimit, setDailyLossLimit] = useState("");
   const [maxDrawdownLimit, setMaxDrawdownLimit] = useState("");
+  const [brokerUtcOffset, setBrokerUtcOffset] = useState("3");
 
   // Update local state when settings load from DB
   useEffect(() => {
@@ -43,6 +51,7 @@ export default function Profile() {
       setInitialBalance(settings.initialBalance.toString());
       setDailyLossLimit(settings.dailyLossLimit.toString());
       setMaxDrawdownLimit(settings.maxDrawdownLimit.toString());
+      setBrokerUtcOffset(settings.brokerUtcOffset.toString());
     }
   }, [settings, isLoading]);
 
@@ -92,11 +101,13 @@ export default function Profile() {
     const newInitialBalance = parseFloat(initialBalance) || 100000;
     const newDailyLossLimit = parseFloat(dailyLossLimit) || 5000;
     const newMaxDrawdownLimit = parseFloat(maxDrawdownLimit) || 10000;
+    const newBrokerUtcOffset = parseInt(brokerUtcOffset) || 3;
     
     saveSettings({
       initialBalance: newInitialBalance,
       dailyLossLimit: newDailyLossLimit,
       maxDrawdownLimit: newMaxDrawdownLimit,
+      brokerUtcOffset: newBrokerUtcOffset,
     });
   };
 
@@ -204,6 +215,29 @@ export default function Profile() {
               <CardDescription>Configure os parâmetros da sua conta de trading</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Broker UTC Offset */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  Offset UTC do Broker (New York Close)
+                </Label>
+                <Select value={brokerUtcOffset} onValueChange={setBrokerUtcOffset}>
+                  <SelectTrigger className="bg-secondary/30">
+                    <SelectValue placeholder="Selecione o offset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">+0 (UTC)</SelectItem>
+                    <SelectItem value="1">+1</SelectItem>
+                    <SelectItem value="2">+2</SelectItem>
+                    <SelectItem value="3">+3 (Padrão - NY Close)</SelectItem>
+                    <SelectItem value="4">+4</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Ajuste o offset do servidor do seu broker. +3 é o padrão para New York Close (vela diária fecha 17h NY).
+                </p>
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-muted-foreground">

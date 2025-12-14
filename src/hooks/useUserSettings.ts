@@ -8,6 +8,7 @@ export interface UserSettings {
   dailyLossLimit: number;
   maxDrawdownLimit: number;
   theme: "light" | "dark" | "system";
+  brokerUtcOffset: number;
 }
 
 const defaultSettings: UserSettings = {
@@ -15,6 +16,7 @@ const defaultSettings: UserSettings = {
   dailyLossLimit: 5000,
   maxDrawdownLimit: 10000,
   theme: "system",
+  brokerUtcOffset: 3,
 };
 
 export function useUserSettings() {
@@ -51,6 +53,7 @@ export function useUserSettings() {
             dailyLossLimit: Number(data.daily_loss_limit),
             maxDrawdownLimit: Number(data.max_drawdown_limit),
             theme: data.theme as UserSettings["theme"],
+            brokerUtcOffset: Number(data.broker_utc_offset ?? 3),
           });
         }
       } catch (error) {
@@ -80,6 +83,7 @@ export function useUserSettings() {
             daily_loss_limit: updatedSettings.dailyLossLimit,
             max_drawdown_limit: updatedSettings.maxDrawdownLimit,
             theme: updatedSettings.theme,
+            broker_utc_offset: updatedSettings.brokerUtcOffset,
           }, { onConflict: "user_id" });
 
         if (error) throw error;
