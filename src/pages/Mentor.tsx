@@ -1,10 +1,10 @@
 import { Sidebar } from "@/components/Sidebar";
 import { useTrades } from "@/hooks/useTrades";
 import { calculateMetrics } from "@/lib/parseTradeReport";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { 
   GraduationCap, Brain, Sparkles, RefreshCw, AlertCircle, CalendarDays, 
-  Send, Lightbulb, TrendingUp 
+  Send, Lightbulb, TrendingUp, Clock 
 } from "lucide-react";
 import { MarkdownText } from "@/components/MarkdownText";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,9 @@ import { DateRange } from "react-day-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { TraderArchetype } from "@/components/TraderArchetype";
+import { AccountSelector } from "@/components/AccountSelector";
+import { useTradingAccounts } from "@/hooks/useTradingAccounts";
+import { useMentorAnalyses } from "@/hooks/useMentorAnalyses";
 
 const MENTOR_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mentor-analysis`;
 const ORACLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/oracle-chat`;
@@ -40,6 +43,8 @@ const Mentor = () => {
   const { trades, isLoading } = useTrades();
   const { session } = useAuth();
   const { toast } = useToast();
+  const { activeAccount, activeAccountId } = useTradingAccounts();
+  const { latestAnalysis, saveAnalysis } = useMentorAnalyses(activeAccountId, "percepcoes");
   
   // Analysis state
   const [analysis, setAnalysis] = useState<string>("");
@@ -47,6 +52,7 @@ const Mentor = () => {
   const [error, setError] = useState<string | null>(null);
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
+  const [analysisTimestamp, setAnalysisTimestamp] = useState<Date | null>(null);
 
   // Oracle state
   const [oracleMessage, setOracleMessage] = useState("");
@@ -57,6 +63,14 @@ const Mentor = () => {
   const [selectedTradeId, setSelectedTradeId] = useState<string>("");
   const [reflectionResponse, setReflectionResponse] = useState("");
   const [isReflectionLoading, setIsReflectionLoading] = useState(false);
+
+  // Load last saved analysis on mount if no current analysis
+  useEffect(() => {
+    if (latestAnalysis && !analysis) {
+      setAnalysis(latestAnalysis.analysis_content);
+      setAnalysisTimestamp(new Date(latestAnalysis.created_at));
+    }
+  }, [latestAnalysis]);
 
   // Filter trades by period
   const filteredTrades = useMemo(() => {
@@ -254,14 +268,32 @@ const Mentor = () => {
     setIsAnalyzing(true);
     setError(null);
     setAnalysis("");
+    setAnalysisTimestamp(null);
+
+    let fullAnalysis = "";
 
     try {
       await streamResponse(
         MENTOR_URL,
         { tradeData },
-        (chunk) => setAnalysis((prev) => prev + chunk),
+        (chunk) => {
+          fullAnalysis += chunk;
+          setAnalysis(fullAnalysis);
+        },
         (err) => setError(err)
       );
+
+      // Save analysis after completion
+      if (fullAnalysis) {
+        const now = new Date();
+        setAnalysisTimestamp(now);
+        saveAnalysis({
+          analysis_content: fullAnalysis,
+          analysis_type: "percepcoes",
+          period_filter: periodLabel,
+          account_id: activeAccountId,
+        });
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Falha ao analisar operações";
       setError(errorMessage);
@@ -269,7 +301,7 @@ const Mentor = () => {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [tradeData, session, toast]);
+  }, [tradeData, session, toast, periodLabel, activeAccountId, saveAnalysis]);
 
   // Oracle Chat
   const sendOracleMessage = useCallback(async (message: string) => {
@@ -362,11 +394,14 @@ const Mentor = () => {
       <main className="flex-1 overflow-auto">
         <div className="p-8 max-w-5xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Treinador de Comércio com IA</h1>
-            <p className="text-muted-foreground">
-              Obtenha insights personalizados, reflexões e orientação para melhorar seu desempenho no mercado financeiro.
-            </p>
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Treinador de Comércio com IA</h1>
+              <p className="text-muted-foreground">
+                Obtenha insights personalizados, reflexões e orientação para melhorar seu desempenho no mercado financeiro.
+              </p>
+            </div>
+            <AccountSelector />
           </div>
 
           {isLoading ? (
@@ -560,7 +595,7 @@ const Mentor = () => {
               {/* Insights Tab (Original Analysis) */}
               <TabsContent value="insights" className="space-y-6">
                 {/* Trader Archetype Section */}
-                <TraderArchetype tradeData={tradeData} />
+                <TraderArchetype tradeData={tradeData} accountId={activeAccountId} />
 
                 {/* Period Filter */}
                 <Card className="p-4">
@@ -691,19 +726,28 @@ const Mentor = () => {
                   </Card>
                 )}
 
-                {/* AI Analysis */}
-                {analysis && (
-                  <Card className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Brain className="h-5 w-5 text-primary" />
-                      <h2 className="text-lg font-semibold text-foreground">Análise do Mentor AI</h2>
-                      <span className="text-xs text-muted-foreground ml-auto">({periodLabel})</span>
-                    </div>
-                    <div className="prose prose-invert prose-sm max-w-none">
-                      <MarkdownText content={analysis} className="text-foreground/90" />
-                    </div>
-                  </Card>
-                )}
+              {/* AI Analysis */}
+              {analysis && (
+                <Card className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Brain className="h-5 w-5 text-primary" />
+                    <h2 className="text-lg font-semibold text-foreground">Análise do Mentor AI</h2>
+                    <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+                      {analysisTimestamp && (
+                        <>
+                          <Clock className="h-3 w-3" />
+                          {format(analysisTimestamp, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          <span className="mx-2">•</span>
+                        </>
+                      )}
+                      ({periodLabel})
+                    </span>
+                  </div>
+                  <div className="prose prose-invert prose-sm max-w-none">
+                    <MarkdownText content={analysis} className="text-foreground/90" />
+                  </div>
+                </Card>
+              )}
 
                 {/* Initial State */}
                 {!analysis && !isAnalyzing && !error && filteredTrades.length > 0 && (

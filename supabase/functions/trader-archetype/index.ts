@@ -36,7 +36,7 @@ serve(async (req) => {
       });
     }
 
-    const { tradeData } = await req.json();
+    const { tradeData, accountId } = await req.json();
 
     if (!tradeData) {
       return new Response(JSON.stringify({ error: "Trade data required" }), {
@@ -44,6 +44,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log("Generating archetype for user:", user.id, "account:", accountId);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -156,18 +158,49 @@ Aspect: Portrait bust shot, looking determined.`;
       console.error("Image generation failed:", imageResponse.status);
     }
 
-    // Save to database (upsert)
-    const { error: dbError } = await supabase
+    // Build upsert data based on whether accountId is provided
+    const upsertData: Record<string, unknown> = {
+      user_id: user.id,
+      archetype_name: archetypeInfo.name,
+      archetype_description: archetypeInfo.description,
+      archetype_image_url: imageUrl,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (accountId) {
+      upsertData.account_id = accountId;
+    }
+
+    // For upsert, we need to handle the composite key (user_id + account_id)
+    // First try to find existing
+    let query = supabase
       .from("trader_archetype")
-      .upsert({
-        user_id: user.id,
-        archetype_name: archetypeInfo.name,
-        archetype_description: archetypeInfo.description,
-        archetype_image_url: imageUrl,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: "user_id",
-      });
+      .select("id")
+      .eq("user_id", user.id);
+    
+    if (accountId) {
+      query = query.eq("account_id", accountId);
+    } else {
+      query = query.is("account_id", null);
+    }
+
+    const { data: existing } = await query.maybeSingle();
+
+    let dbError;
+    if (existing) {
+      // Update existing
+      const { error } = await supabase
+        .from("trader_archetype")
+        .update(upsertData)
+        .eq("id", existing.id);
+      dbError = error;
+    } else {
+      // Insert new
+      const { error } = await supabase
+        .from("trader_archetype")
+        .insert(upsertData);
+      dbError = error;
+    }
 
     if (dbError) {
       console.error("Database error:", dbError);
