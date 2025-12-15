@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, ChevronDown, Settings, Check } from "lucide-react";
+import { Plus, ChevronDown, Settings, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +16,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTradingAccounts, TradingAccount } from "@/hooks/useTradingAccounts";
@@ -31,13 +41,16 @@ export function AccountSelector() {
     activeAccount,
     setActiveAccountId,
     createAccount,
+    deleteAccount,
     isCreating,
+    isDeleting,
   } = useTradingAccounts();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [newAccountName, setNewAccountName] = useState("");
   const [editingAccount, setEditingAccount] = useState<TradingAccount | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<TradingAccount | null>(null);
   const [hasLinkedOrphanTrades, setHasLinkedOrphanTrades] = useState(false);
 
   // Auto-link orphan trades (trades without account_id) to the first account
@@ -68,6 +81,13 @@ export function AccountSelector() {
       createAccount(newAccountName.trim());
       setNewAccountName("");
       setIsCreateOpen(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (accountToDelete) {
+      deleteAccount(accountToDelete.id);
+      setAccountToDelete(null);
     }
   };
 
@@ -163,7 +183,7 @@ export function AccountSelector() {
           <DialogHeader>
             <DialogTitle>Gerenciar Portfólios</DialogTitle>
             <DialogDescription>
-              Crie, edite ou selecione suas contas de trading.
+              Crie, edite ou exclua suas contas de trading.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -209,7 +229,7 @@ export function AccountSelector() {
                     ) : (
                       <span className="font-medium">{account.name}</span>
                     )}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       {account.id === activeAccount?.id && (
                         <Check className="h-4 w-4 text-primary" />
                       )}
@@ -223,6 +243,17 @@ export function AccountSelector() {
                         }}
                       >
                         <Settings className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAccountToDelete(account);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
@@ -262,6 +293,29 @@ export function AccountSelector() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!accountToDelete} onOpenChange={() => setAccountToDelete(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Conta</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a conta "{accountToDelete?.name}"? 
+              Todos os trades vinculados a esta conta também serão excluídos. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
