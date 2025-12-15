@@ -3,22 +3,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { Trade } from "@/lib/parseTradeReport";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTradingAccounts } from "@/hooks/useTradingAccounts";
 
 export function useTrades() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { activeAccountId } = useTradingAccounts();
 
   const { data: trades = [], isLoading } = useQuery({
-    queryKey: ["trades", user?.id],
+    queryKey: ["trades", user?.id, activeAccountId],
     queryFn: async () => {
       if (!user) return [];
       
-      const { data, error } = await supabase
+      let query = supabase
         .from("trades")
         .select("*")
         .eq("user_id", user.id)
         .order("close_time", { ascending: false });
+
+      // Filter by active account if one is selected
+      if (activeAccountId) {
+        query = query.eq("account_id", activeAccountId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -60,13 +69,14 @@ export function useTrades() {
         duration: trade.duration,
         is_win: trade.isWin,
         user_id: user.id,
+        account_id: activeAccountId,
       }));
 
       const { error } = await supabase.from("trades").insert(tradesToInsert);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["trades", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["trades"] });
       toast({
         title: "Sucesso",
         description: "Operações salvas com sucesso!",
@@ -85,17 +95,24 @@ export function useTrades() {
     mutationFn: async () => {
       if (!user) throw new Error("User not authenticated");
       
-      const { error } = await supabase
+      let query = supabase
         .from("trades")
         .delete()
         .eq("user_id", user.id);
+
+      // Delete only trades from active account if one is selected
+      if (activeAccountId) {
+        query = query.eq("account_id", activeAccountId);
+      }
+
+      const { error } = await query;
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["trades", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["trades"] });
       toast({
         title: "Sucesso",
-        description: "Todas as operações foram deletadas!",
+        description: "Operações da conta ativa foram deletadas!",
       });
     },
     onError: () => {
