@@ -57,7 +57,7 @@ export function useTradingAccounts() {
   // Get active account
   const activeAccount = accounts.find(a => a.id === activeAccountId) || accounts[0] || null;
 
-  // Set active account and persist to localStorage
+  // Set active account and persist to localStorage, then invalidate trades cache
   const setActiveAccountId = useCallback((accountId: string | null) => {
     setActiveAccountIdState(accountId);
     if (accountId) {
@@ -65,7 +65,12 @@ export function useTradingAccounts() {
     } else {
       localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
     }
-  }, []);
+    // Invalidate trades and related queries to force reload for the new account
+    queryClient.invalidateQueries({ queryKey: ["trades"] });
+    queryClient.invalidateQueries({ queryKey: ["mentor-analyses"] });
+    queryClient.invalidateQueries({ queryKey: ["archetype-history"] });
+    queryClient.invalidateQueries({ queryKey: ["trader-archetype"] });
+  }, [queryClient]);
 
   // Auto-select first account if none selected
   useEffect(() => {
@@ -93,10 +98,11 @@ export function useTradingAccounts() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["trading-accounts", user?.id] });
+      // Switch to new account - this will also invalidate trades/archetype queries
       setActiveAccountId(data.id);
       toast({
         title: "Sucesso",
-        description: "Conta criada com sucesso!",
+        description: "Nova conta criada! Importe seus trades para começar.",
       });
     },
     onError: () => {
