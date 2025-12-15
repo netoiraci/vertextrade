@@ -64,13 +64,28 @@ const Mentor = () => {
   const [reflectionResponse, setReflectionResponse] = useState("");
   const [isReflectionLoading, setIsReflectionLoading] = useState(false);
 
-  // Load last saved analysis on mount if no current analysis
+  // Reset mentor/oracle/reflection UI when switching accounts
+  useEffect(() => {
+    setAnalysis("");
+    setAnalysisTimestamp(null);
+    setError(null);
+    setPeriodFilter("all");
+    setCustomDateRange(undefined);
+
+    setOracleMessage("");
+    setOracleResponse("");
+
+    setSelectedTradeId("");
+    setReflectionResponse("");
+  }, [activeAccountId]);
+
+  // Load last saved analysis for the selected account
   useEffect(() => {
     if (latestAnalysis && !analysis) {
       setAnalysis(latestAnalysis.analysis_content);
       setAnalysisTimestamp(new Date(latestAnalysis.created_at));
     }
-  }, [latestAnalysis]);
+  }, [latestAnalysis, analysis]);
 
   // Filter trades by period
   const filteredTrades = useMemo(() => {
