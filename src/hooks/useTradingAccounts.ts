@@ -58,7 +58,8 @@ export function useTradingAccounts() {
   const activeAccount = accounts.find(a => a.id === activeAccountId) || accounts[0] || null;
 
   // Set active account and persist to localStorage, then invalidate trades cache
-  const setActiveAccountId = useCallback((accountId: string | null) => {
+  const setActiveAccountId = useCallback((accountId: string | null, showToast = true) => {
+    const previousAccountId = activeAccountId;
     setActiveAccountIdState(accountId);
     if (accountId) {
       localStorage.setItem(ACTIVE_ACCOUNT_KEY, accountId);
@@ -70,12 +71,23 @@ export function useTradingAccounts() {
     queryClient.invalidateQueries({ queryKey: ["mentor-analyses"] });
     queryClient.invalidateQueries({ queryKey: ["archetype-history"] });
     queryClient.invalidateQueries({ queryKey: ["trader-archetype"] });
-  }, [queryClient]);
+    
+    // Show toast when switching between accounts (not on initial load)
+    if (showToast && previousAccountId && accountId && previousAccountId !== accountId) {
+      const newAccount = accounts.find(a => a.id === accountId);
+      if (newAccount) {
+        toast({
+          title: "Conta alterada",
+          description: `Agora você está visualizando: ${newAccount.name}`,
+        });
+      }
+    }
+  }, [queryClient, activeAccountId, accounts, toast]);
 
-  // Auto-select first account if none selected
+  // Auto-select first account if none selected (without toast)
   useEffect(() => {
     if (accounts.length > 0 && !activeAccountId) {
-      setActiveAccountId(accounts[0].id);
+      setActiveAccountId(accounts[0].id, false);
     }
   }, [accounts, activeAccountId, setActiveAccountId]);
 

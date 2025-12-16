@@ -23,6 +23,7 @@ import { TraderArchetype } from "@/components/TraderArchetype";
 import { AccountSelector } from "@/components/AccountSelector";
 import { useTradingAccounts } from "@/hooks/useTradingAccounts";
 import { useMentorAnalyses } from "@/hooks/useMentorAnalyses";
+import { ActiveAccountBanner } from "@/components/ActiveAccountBanner";
 
 const MENTOR_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mentor-analysis`;
 const ORACLE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/oracle-chat`;
@@ -416,7 +417,10 @@ const Mentor = () => {
                 Obtenha insights personalizados, reflexões e orientação para melhorar seu desempenho no mercado financeiro.
               </p>
             </div>
-            <AccountSelector />
+            <div className="flex items-center gap-3">
+              <ActiveAccountBanner />
+              <AccountSelector />
+            </div>
           </div>
 
           {isLoading ? (

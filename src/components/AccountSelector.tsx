@@ -33,7 +33,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 
-export function AccountSelector() {
+interface AccountSelectorProps {
+  onAccountCreated?: () => void;
+}
+
+export function AccountSelector({ onAccountCreated }: AccountSelectorProps = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const {
@@ -81,6 +85,8 @@ export function AccountSelector() {
       createAccount(newAccountName.trim());
       setNewAccountName("");
       setIsCreateOpen(false);
+      // Trigger callback to reset importer state
+      onAccountCreated?.();
     }
   };
 
