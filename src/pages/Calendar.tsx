@@ -1,9 +1,12 @@
 import { Sidebar } from "@/components/Sidebar";
 import { TradingCalendar } from "@/components/TradingCalendar";
 import { useTrades } from "@/hooks/useTrades";
+import { ActiveAccountBanner } from "@/components/ActiveAccountBanner";
+import { useTradingAccounts } from "@/hooks/useTradingAccounts";
 
 const Calendar = () => {
   const { trades, isLoading } = useTrades();
+  useTradingAccounts(); // Hook to ensure account context
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -11,11 +14,14 @@ const Calendar = () => {
       
       <main className="flex-1 overflow-auto">
         <div className="p-8 max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Trading Calendar</h1>
-            <p className="text-muted-foreground">
-              Visual calendar view of your trading activity
-            </p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Trading Calendar</h1>
+              <p className="text-muted-foreground">
+                Visual calendar view of your trading activity
+              </p>
+            </div>
+            <ActiveAccountBanner />
           </div>
 
           {isLoading ? (

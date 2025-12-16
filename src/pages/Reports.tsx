@@ -11,17 +11,25 @@ import { HoldingTimeChart } from "@/components/performance/HoldingTimeChart";
 import { RecentTradesWidget } from "@/components/performance/RecentTradesWidget";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown, Calendar, Clock, Target, Award, DollarSign, BarChart3, Timer } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { TradeFilters, TradeFiltersState, defaultFilters } from "@/components/TradeFilters";
 import { useTradeFilters } from "@/hooks/useTradeFilters";
+import { useTradingAccounts } from "@/hooks/useTradingAccounts";
+import { ActiveAccountBanner } from "@/components/ActiveAccountBanner";
 
 const INITIAL_BALANCE = 100000;
 
 const Reports = () => {
   const { trades, isLoading } = useTrades();
+  const { activeAccountId } = useTradingAccounts();
   const [filters, setFilters] = useState<TradeFiltersState>(defaultFilters);
   const filteredTrades = useTradeFilters(trades, filters);
   const metrics = calculateMetrics(filteredTrades);
+
+  // Reset filters when switching accounts
+  useEffect(() => {
+    setFilters(defaultFilters);
+  }, [activeAccountId]);
 
   const additionalMetrics = useMemo(() => {
     if (filteredTrades.length === 0) return null;
@@ -106,12 +114,15 @@ const Reports = () => {
       
       <main className="flex-1 overflow-auto">
         <div className="p-8 max-w-7xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Análise de Performance</h1>
-            <p className="text-muted-foreground">
-              Análises detalhadas com insights por horário, dia da semana e tempo de permanência
-              {filteredTrades.length !== trades.length && ` (showing ${filteredTrades.length} of ${trades.length})`}
-            </p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Análise de Performance</h1>
+              <p className="text-muted-foreground">
+                Análises detalhadas com insights por horário, dia da semana e tempo de permanência
+                {filteredTrades.length !== trades.length && ` (showing ${filteredTrades.length} of ${trades.length})`}
+              </p>
+            </div>
+            <ActiveAccountBanner />
           </div>
 
           {isLoading ? (

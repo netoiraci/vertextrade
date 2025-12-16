@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { FileUpload } from "@/components/FileUpload";
 import { parseTradeReport, calculateMetrics } from "@/lib/parseTradeReport";
 import { useTrades } from "@/hooks/useTrades";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useTradingAccounts } from "@/hooks/useTradingAccounts";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,12 +35,25 @@ import { PnLScatterPlot } from "@/components/dashboard/PnLScatterPlot";
 import { SQNIndicator } from "@/components/dashboard/SQNIndicator";
 import { TradeFilters, TradeFiltersState, defaultFilters } from "@/components/TradeFilters";
 import { useTradeFilters } from "@/hooks/useTradeFilters";
+import { ActiveAccountBanner } from "@/components/ActiveAccountBanner";
 
 const Index = () => {
   const { trades, saveTrades, deleteAllTrades, isLoading, isSaving, isDeleting } = useTrades();
   const { settings, isLoading: isSettingsLoading } = useUserSettings();
+  const { activeAccountId } = useTradingAccounts();
   const [showUpload, setShowUpload] = useState(false);
   const [filters, setFilters] = useState<TradeFiltersState>(defaultFilters);
+
+  // Reset importer state when account changes
+  const resetImporterState = useCallback(() => {
+    setShowUpload(false);
+    setFilters(defaultFilters);
+  }, []);
+
+  // Reset state when switching accounts
+  useEffect(() => {
+    resetImporterState();
+  }, [activeAccountId, resetImporterState]);
 
   const filteredTrades = useTradeFilters(trades, filters);
 
@@ -118,6 +132,7 @@ const Index = () => {
               <span className="text-primary font-bold">|</span>
               <h1 className="text-xl font-semibold text-foreground">Overview Dashboard</h1>
               {trades.length > 0 && <StreakBadge trades={trades} />}
+              <ActiveAccountBanner />
             </div>
             <div className="flex gap-2">
               {trades.length > 0 && (
