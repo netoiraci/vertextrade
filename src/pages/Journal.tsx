@@ -12,6 +12,8 @@ import {
   TradeJourneyChart,
   TradeStats,
 } from "@/components/journal";
+import { GraphView } from "@/components/graph";
+import { ViewToggle, ViewType } from "@/components/ViewToggle";
 
 const Journal = () => {
   const { trades, isLoading } = useTrades();
@@ -19,12 +21,14 @@ const Journal = () => {
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const [pinnedTrades, setPinnedTrades] = useState<Set<string>>(new Set());
   const [isChartLoading, setIsChartLoading] = useState(false);
+  const [viewType, setViewType] = useState<ViewType>("table");
   const chartRef = useRef<HTMLDivElement>(null);
 
   // Reset state when switching accounts
   useEffect(() => {
     setSelectedTrade(null);
     setPinnedTrades(new Set());
+    setViewType("table");
   }, [activeAccountId]);
 
   // Auto-select first pinned trade or first trade on load
@@ -79,7 +83,10 @@ const Journal = () => {
                   Histórico completo de todas as {trades.length} operações
                 </p>
               </div>
-              <ActiveAccountBanner />
+              <div className="flex items-center gap-3">
+                <ViewToggle view={viewType} onViewChange={setViewType} />
+                <ActiveAccountBanner />
+              </div>
             </div>
 
             {!isLoading && trades.length > 0 && <JournalHeader trades={trades} />}
@@ -102,49 +109,50 @@ const Journal = () => {
             <>
               <Separator />
 
-              {/* Main Content */}
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                {/* Left: Trading Table */}
-                <div className="lg:col-span-3">
-                  <TradingJournalTable
-                    trades={trades}
-                    selectedTrade={selectedTrade}
-                    onTradeSelect={handleTradeSelect}
-                    pinnedTrades={pinnedTrades}
-                    onTogglePin={handleTogglePin}
-                  />
-                </div>
-
-                {/* Right: Trade Journey Visualization */}
-                <div ref={chartRef} className="lg:col-span-2 space-y-4">
-                  <div className="space-y-2">
-                    <h2 className="text-xl font-semibold text-foreground">
-                      Visualização Interativa
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      Clique em uma operação para ver a evolução do preço
-                    </p>
+              {viewType === "graph" ? (
+                <GraphView trades={trades} onTradeSelect={handleTradeSelect} />
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                  <div className="lg:col-span-3">
+                    <TradingJournalTable
+                      trades={trades}
+                      selectedTrade={selectedTrade}
+                      onTradeSelect={handleTradeSelect}
+                      pinnedTrades={pinnedTrades}
+                      onTogglePin={handleTogglePin}
+                    />
                   </div>
 
-                  {isChartLoading ? (
-                    <Card className="h-[400px] flex items-center justify-center border-border">
-                      <CardContent>
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                          <p className="text-muted-foreground">Carregando dados do trade...</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : selectedTrade ? (
-                    <div className="animate-in fade-in duration-500 space-y-4">
-                      <TradeStats trade={selectedTrade} />
-                      <TradeJourneyChart trade={selectedTrade} />
+                  <div ref={chartRef} className="lg:col-span-2 space-y-4">
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-semibold text-foreground">
+                        Visualização Interativa
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        Clique em uma operação para ver a evolução do preço
+                      </p>
                     </div>
-                  ) : (
-                    <TradeJourneyChart trade={null} />
-                  )}
+
+                    {isChartLoading ? (
+                      <Card className="h-[400px] flex items-center justify-center border-border">
+                        <CardContent>
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                            <p className="text-muted-foreground">Carregando dados do trade...</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : selectedTrade ? (
+                      <div className="animate-in fade-in duration-500 space-y-4">
+                        <TradeStats trade={selectedTrade} />
+                        <TradeJourneyChart trade={selectedTrade} />
+                      </div>
+                    ) : (
+                      <TradeJourneyChart trade={null} />
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
         </div>
